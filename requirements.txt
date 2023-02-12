@@ -2,3 +2,4 @@ Django==4.1.6
 requests
 rozklad-ontu-parser-MakisuKurisu
 python-decouple
+djangorestframework

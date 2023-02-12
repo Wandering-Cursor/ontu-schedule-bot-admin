@@ -53,6 +53,9 @@ class Group(BaseModel):
         related_name="groups"
     )
 
+    def as_json(self):
+        return {'name': self.name, 'faculty': {'name': self.faculty.name}}
+
     objects = admin_db.GroupManager
 
     def __str__(self) -> str:
@@ -67,6 +70,12 @@ class Subscription(BaseModel):
         on_delete=models.CASCADE,
         related_name="subscriptions"
     )
+
+    def as_json(self):
+        return {
+            'is_active': self.is_active,
+            'group': self.group.as_json(),
+        }
 
     @property
     def related_telegram_chats(self):
@@ -104,6 +113,16 @@ class TelegramChat(BaseModel):
     )
 
     objects = admin_db.TelegramChatManager
+
+    def as_json(self):
+        data = {
+            'chat_id': self.telegram_id,
+            'chat_name': self.name,
+        }
+        self.subscription: Subscription
+        if self.subscription:
+            data['subscription'] = self.subscription.as_json()
+        return data
 
     def __str__(self) -> str:
         return f"{self.name} - {self.telegram_id}"
