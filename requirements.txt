@@ -1,5 +1,5 @@
 Django==4.1.6
 requests
-rozklad-ontu-parser-MakisuKurisu>=0.0.2.2.1
+rozklad-ontu-parser-MakisuKurisu>=0.0.2.3
 python-decouple
 djangorestframework
