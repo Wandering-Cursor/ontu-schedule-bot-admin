@@ -40,6 +40,9 @@ class Faculty(BaseModel):
 
     objects = admin_db.FacultyManager()
 
+    def as_json(self):
+        return {"name": self.name}
+
     def __str__(self) -> str:
         return f"Faculty: {self.name}"
 
@@ -54,7 +57,7 @@ class Group(BaseModel):
     )
 
     def as_json(self):
-        return {'name': self.name, 'faculty': {'name': self.faculty.name}}
+        return {'name': self.name, 'faculty': self.faculty.as_json()}
 
     objects = admin_db.GroupManager
 
