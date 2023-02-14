@@ -22,16 +22,18 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = config('SECRET_KEY')
-if not SECRET_KEY:
-    SECRET_KEY = input("Enter Django Secret Key: ")
+tmp = config('SECRET_KEY')
+if not tmp:
+    tmp = input("Enter Django Secret Key: ")
     with open('.env', 'a+', encoding='UTF-8') as f:
-        f.write(f"SECRET_KEY={SECRET_KEY}")
+        f.write(f"SECRET_KEY={tmp}")
+SECRET_KEY = config('SECRET_KEY')
+
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
