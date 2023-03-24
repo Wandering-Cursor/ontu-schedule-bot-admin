@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'admin_site_database',
     'admin_site_endpoints',
+    'rest_framework',
 ]
 
 MIDDLEWARE = [
@@ -64,7 +65,9 @@ ROOT_URLCONF = 'admin_site.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [
+            "admin_site/admin_site/"
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
