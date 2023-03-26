@@ -5,7 +5,10 @@ from django.contrib import admin
 
 from django.db import transaction
 
-from admin_site_database.model_files import Faculty
+from admin_site_database.model_files import (
+    Faculty,
+    Group
+)
 from admin_site_database import operations
 from admin_site_database.admin_sites.base import BaseAdmin
 
@@ -16,10 +19,10 @@ def get_faculties(_, *args, **kwargs):
     """Action to fetch faculties"""
     faculties = operations.fetch_faculties()
     for faculty in faculties:
-        new_faculty, created = models.Faculty.objects.get_or_create(
+        new_faculty, created = Faculty.objects.get_or_create(
             name=faculty.get_faculty_name()
         )
-        new_faculty: models.Faculty
+        new_faculty: Faculty
         if created:
             new_faculty.save()
 
@@ -33,19 +36,19 @@ def get_groups(_, __, queryset):
         ...
         queryset (`Queryset[models.Faculty]`): Selected Faculties
     """
-    faculties: list[models.Faculty] = queryset.all()
+    faculties: list[Faculty] = queryset.all()
     groups_per_faculty = operations.fetch_groups(faculties)
     for faculty, groups in groups_per_faculty.items():
-        faculty: models.Faculty
+        faculty: Faculty
         print(f"Now fetching faculty: {faculty}")
         for group in groups:
             group_name = group.get_group_name()
             print(f"Fetching Group: {group_name}")
-            new_group, created = models.Group.objects.get_or_create(
+            new_group, created = Group.objects.get_or_create(
                 faculty_id=faculty.id,
                 name=group_name
             )
-            new_group: models.Group
+            new_group: Group
             if created:
                 new_group.save()
 
