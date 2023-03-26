@@ -14,4 +14,4 @@ class BaseAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
 
     readonly_fields = ['id', 'created', 'updated']
 
-    ordering = ['created']
+    ordering = ['-created']
