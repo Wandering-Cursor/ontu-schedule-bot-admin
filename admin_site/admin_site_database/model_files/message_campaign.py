@@ -50,7 +50,6 @@ class MessageCampaign(BaseModel):
                 },
                 timeout=5
             )
-            print(response)
 
     @property
     def safe_bot_key(self):
