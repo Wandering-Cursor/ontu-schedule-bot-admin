@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'admin_site_database',
     'admin_site_endpoints',
     'rest_framework',
+    'djangoql',
 ]
 
 MIDDLEWARE = [

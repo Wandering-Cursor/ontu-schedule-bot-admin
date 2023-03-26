@@ -3,7 +3,7 @@
 from ontu_parser.classes import Parser
 from ontu_parser.classes.dataclasses import Faculty, Group, BaseLesson
 
-from admin_site_database import models
+from admin_site_database.model_files import Faculty as model_Faculty
 
 
 global_parser = Parser()
@@ -14,7 +14,7 @@ def fetch_faculties() -> list[Faculty]:
     return faculties
 
 
-def fetch_groups(faculty_entities: list[models.Faculty]) -> dict[models.Faculty, list[Group]]:
+def fetch_groups(faculty_entities: list[model_Faculty]) -> dict[model_Faculty, list[Group]]:
     faculties: list[Faculty] = global_parser.get_faculties()
     groups_per_faculty: dict[str, list[Group]] = {}
     for faculty in faculties:
