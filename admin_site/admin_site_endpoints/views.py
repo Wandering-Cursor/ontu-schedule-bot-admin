@@ -3,7 +3,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.request import Request
 
-from admin_site_database import models
+from admin_site_database import model_files as models
 
 from admin_site_database import operations
 
