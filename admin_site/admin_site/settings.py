@@ -155,3 +155,7 @@ LOGGING = {
         },
     },
 }
+
+CSRF_TRUSTED_ORIGINS = ["https://*.github.dev"]
+
+DJANGO_SUPERUSER_PASSWORD = "root"
