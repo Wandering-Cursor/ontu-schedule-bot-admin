@@ -1,1 +1,1 @@
-python3.11 -m pip install -m requirements.txt
+python3.11 -m pip install -r requirements.txt
