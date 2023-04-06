@@ -13,6 +13,7 @@ class BaseAPIView(APIView):
 
 # region Chat Views
 
+
 class ChatInfoView(BaseAPIView):
     def post(self, request: Request):
         request_data: dict[str, object] = request.data
@@ -129,6 +130,22 @@ class GroupsGetView(APIView):
         return Response(
             data=result
         )
+
+
+class UpdateNotbotView(APIView):
+    def get(self, _: Request):
+        try:
+            notbot_value = operations.global_parser.sender.notbot.get_notbot()
+            if notbot_value:
+                return Response(status=200)
+            raise ValueError("Expecting notbot_value to be set")
+        except (ValueError, ConnectionError, Exception) as exception:
+            return Response(
+                data=f"Notbot not set to desired value. {exception}",
+                status=500,
+            )
+
+
 # endregion
 
 class ScheduleGetView(APIView):
