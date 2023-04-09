@@ -85,5 +85,6 @@ def _convert_lesson(lesson: BaseLesson):
             "full_name": lesson.lesson_name["full"],
             "short_name": lesson.lesson_name["short"],
         },
-        "lesson_info": lesson.lesson_info
+        "lesson_info": lesson.lesson_info,
+        "auditorium": lesson.auditorium,
     }
