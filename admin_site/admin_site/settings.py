@@ -31,7 +31,7 @@ SECRET_KEY = config('SECRET_KEY')
 
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ['*']
 
@@ -159,3 +159,6 @@ LOGGING = {
 CSRF_TRUSTED_ORIGINS = ["https://*.github.dev"]
 
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 8196
+
+STATIC_ROOT = "/root/ONTU/admin/admin_site/static/"
+STATIC_URL = "static/"
