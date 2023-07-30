@@ -1,15 +1,20 @@
+from django.utils import timezone
+
 from rest_framework.views import APIView
 
 from rest_framework.response import Response
 from rest_framework.request import Request
 
-from admin_site_database import model_files as models
+from admin_site_database import model_files
 
 from admin_site_database import operations
+
+from .models import ScheduleCache
 
 
 class BaseAPIView(APIView):
     """Base View for API"""
+
 
 # region Chat Views
 
@@ -17,16 +22,14 @@ class BaseAPIView(APIView):
 class ChatInfoView(BaseAPIView):
     def post(self, request: Request):
         request_data: dict[str, object] = request.data
-        telegram_chat = models.TelegramChat.objects.filter(
-            telegram_id=request_data['chat_id']
-        ).first()
-        if isinstance(telegram_chat, models.TelegramChat):
+        telegram_chat = model_files.TelegramChat.objects.filter(telegram_id=request_data["chat_id"]).first()
+        if isinstance(telegram_chat, model_files.TelegramChat):
             return Response(
                 data={
                     "status": "ok",
                     **telegram_chat.as_json(),
                 },
-                status=200
+                status=200,
             )
         else:
             return Response(status=404)
@@ -35,33 +38,22 @@ class ChatInfoView(BaseAPIView):
 class ChatCreateView(BaseAPIView):
     def post(self, request: Request):
         request_data: dict[str, object] = request.data
-        chat, created = models.TelegramChat.objects.get_or_create(
-            telegram_id=request_data['chat_id'],
-            name=request_data['chat_name'],
-            chat_info=request_data['chat_info']
+        chat, created = model_files.TelegramChat.objects.get_or_create(
+            telegram_id=request_data["chat_id"], name=request_data["chat_name"], chat_info=request_data["chat_info"]
         )
-        chat: models.TelegramChat
+        chat: model_files.TelegramChat
         if created:
             chat.save()
-        return Response(
-            data={
-                "status": "ok",
-                **chat.as_json()
-            }
-        )
+        return Response(data={"status": "ok", **chat.as_json()})
 
 
 class ChatsAllView(BaseAPIView):
     def post(self, request):
         result = []
-        for chat in models.TelegramChat.objects.all():
-            chat: models.TelegramChat
-            result.append(
-                chat.as_json()
-            )
-        return Response(
-            data=result
-        )
+        for chat in model_files.TelegramChat.objects.all():
+            chat: model_files.TelegramChat
+            result.append(chat.as_json())
+        return Response(data=result)
 
 
 class ChatUpdateView(BaseAPIView):
@@ -72,64 +64,45 @@ class ChatUpdateView(BaseAPIView):
         group_info = request_data["group"]
         is_active = request_data["is_active"]
 
-        telegram_chat: models.TelegramChat = models.TelegramChat.objects.filter(
+        telegram_chat: model_files.TelegramChat = model_files.TelegramChat.objects.filter(
             telegram_id=telegram_id
         ).first()
         if not telegram_chat:
             return Response(status=404)
 
-        group = models.Group.objects.filter(
-            name=group_info["name"],
-            faculty__name=group_info["faculty"]
-        ).first()
+        group = model_files.Group.objects.filter(name=group_info["name"], faculty__name=group_info["faculty"]).first()
         if not group:
             return Response(status=404)
 
-        subscription, _ = models.Subscription.objects.update_or_create(
-            is_active=is_active,
-            group=group
-        )
-        subscription: models.Subscription
+        subscription, _ = model_files.Subscription.objects.update_or_create(is_active=is_active, group=group)
+        subscription: model_files.Subscription
         telegram_chat.subscription = subscription
         subscription.save()
         telegram_chat.save()
-        return Response(
-            data={
-                "status": "ok",
-                **subscription.as_json()
-            }
-        )
+        return Response(data={"status": "ok", **subscription.as_json()})
+
 
 # endregion
+
 
 # region ONTU stuff Views
 class FacultiesGetView(APIView):
     def post(self, response):
         result = []
-        for faculty in models.Faculty.objects.all():
-            faculty: models.Faculty
-            result.append(
-                faculty.as_json()
-            )
-        return Response(
-            data=result
-        )
+        for faculty in model_files.Faculty.objects.all():
+            faculty: model_files.Faculty
+            result.append(faculty.as_json())
+        return Response(data=result)
 
 
 class GroupsGetView(APIView):
     def post(self, request: Request):
         request_data: dict[str, str] = request.data
         result = []
-        for group in models.Group.objects.filter(
-            faculty__name=request_data['faculty_name']
-        ).all():
-            group: models.Group
-            result.append(
-                group.as_json()
-            )
-        return Response(
-            data=result
-        )
+        for group in model_files.Group.objects.filter(faculty__name=request_data["faculty_name"]).all():
+            group: model_files.Group
+            result.append(group.as_json())
+        return Response(data=result)
 
 
 class UpdateNotbotView(APIView):
@@ -148,23 +121,30 @@ class UpdateNotbotView(APIView):
 
 # endregion
 
+
 class ScheduleGetView(APIView):
     def post(self, request: Request):
         request_data: dict[str, str] = request.data
-        group_name = request_data['group']
-        faculty_name = request_data['faculty']
+        group_name = request_data["group"]
+        faculty_name = request_data["faculty"]
 
-        group: models.Group | None = models.Group.objects.filter(
-            name=group_name,
-            faculty__name=faculty_name
+        group: model_files.Group | None = model_files.Group.objects.filter(
+            name=group_name, faculty__name=faculty_name
         ).first()
         if not group:
             return Response(status=404)
 
-        schedule = operations.fetch_schedule(
-            faculty_name=group.faculty.name,
-            group_name=group.name
+        cache = ScheduleCache.objects.filter(
+            faculty=faculty_name,
+            group=group_name,
+            at_time__gte=timezone.now() - timezone.timedelta(minutes=30),
         )
-        return Response(
-            data=schedule
-        )
+        if cache.exists():
+            return Response(data=cache.first().schedule)
+
+        schedule = operations.fetch_schedule(faculty_name=group.faculty.name, group_name=group.name)
+        entity, _ = ScheduleCache.objects.get_or_create(faculty=faculty_name, group=group_name)
+        entity.schedule = schedule
+        entity.save()
+
+        return Response(data=schedule)
