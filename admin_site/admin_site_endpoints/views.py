@@ -137,7 +137,7 @@ class ScheduleGetView(APIView):
         cache = ScheduleCache.objects.filter(
             faculty=faculty_name,
             group=group_name,
-            at_time__gte=timezone.now() - timezone.timedelta(minutes=30),
+            at_time__gte=timezone.now() - timezone.timedelta(minutes=45),
         )
         if cache.exists():
             return Response(data=cache.first().schedule)
