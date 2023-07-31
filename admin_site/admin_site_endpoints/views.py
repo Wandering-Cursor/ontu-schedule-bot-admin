@@ -108,6 +108,8 @@ class GroupsGetView(APIView):
 class UpdateNotbotView(APIView):
     def get(self, _: Request):
         try:
+            operations.global_parser.sender.notbot._value = None
+            operations.global_parser.sender.cookies._value = None
             notbot_value = operations.global_parser.sender.notbot.get_notbot()
             if notbot_value:
                 return Response(status=200)
