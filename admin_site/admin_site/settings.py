@@ -145,13 +145,25 @@ LOGGING = {
             'level': 'DEBUG',
             'class': 'logging.FileHandler',
             'filename': 'debug.log',
+            'formatter': 'verbose'
         },
+        'console': {
+            'level': 'WARNING',
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        }
     },
     'loggers': {
         'django': {
-            'handlers': ['file'],
+            'handlers': ['file', 'console'],
             'level': 'INFO',
             'propagate': True,
+        },
+    },
+    'formatters': {
+        "verbose": {
+            "format": "{levelname} {asctime} {module} {name}.{funcName} {lineno} - {message}",
+            "style": "{",
         },
     },
 }
