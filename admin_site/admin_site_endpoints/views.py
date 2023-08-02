@@ -9,6 +9,8 @@ from admin_site_database import model_files
 
 from admin_site_database import operations
 
+from . import operations as endpoint_operations
+
 from .models import ScheduleCache
 
 
@@ -119,6 +121,17 @@ class UpdateNotbotView(APIView):
                 data=f"Notbot not set to desired value. {exception}",
                 status=500,
             )
+
+
+class ResetCacheView(APIView):
+    def post(self, request: Request):
+        request_data: dict[str, str] = request.data
+        group_name = request_data["group"]
+        faculty_name = request_data["faculty"]
+
+        count = endpoint_operations.reset_cache(faculty_name=faculty_name, group_name=group_name)
+
+        return Response(status=200, data={"count": count, "status": "ok"})
 
 
 # endregion
