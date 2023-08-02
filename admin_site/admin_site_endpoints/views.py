@@ -129,7 +129,8 @@ class ResetCacheView(APIView):
         group_name = request_data["group"]
         faculty_name = request_data["faculty"]
 
-        count = endpoint_operations.reset_cache(faculty_name=faculty_name, group_name=group_name)
+        _, result = endpoint_operations.reset_cache(faculty_name=faculty_name, group_name=group_name)
+        count: int = list(result.values())[0]
 
         return Response(status=200, data={"count": count, "status": "ok"})
 
