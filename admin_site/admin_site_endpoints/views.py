@@ -12,6 +12,7 @@ from admin_site_database import operations
 from . import operations as endpoint_operations
 
 from .models import ScheduleCache
+import logging
 
 
 class BaseAPIView(APIView):
@@ -143,6 +144,7 @@ class ScheduleGetView(APIView):
         request_data: dict[str, str] = request.data
         group_name = request_data["group"]
         faculty_name = request_data["faculty"]
+        logging.error(f"Input: {request_data}")
 
         group: model_files.Group | None = model_files.Group.objects.filter(
             name=group_name, faculty__name=faculty_name
@@ -150,15 +152,18 @@ class ScheduleGetView(APIView):
         if not group:
             return Response(status=404)
 
+        logging.error(f"Group: {group}")
         cache = ScheduleCache.objects.filter(
             faculty=faculty_name,
             group=group_name,
             at_time__gte=timezone.now() - timezone.timedelta(minutes=45),
         )
+        logging.error(f"Cache: {cache}")
         if cache.exists():
             return Response(data=cache.first().schedule)
 
         schedule = operations.fetch_schedule(faculty_name=group.faculty.name, group_name=group.name)
+        logging.error(f"Schedule: {schedule}")
         entity, _ = ScheduleCache.objects.get_or_create(faculty=faculty_name, group=group_name)
         entity.schedule = schedule
         entity.save()
