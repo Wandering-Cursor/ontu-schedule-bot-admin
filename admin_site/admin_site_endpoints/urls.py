@@ -2,7 +2,7 @@ from django.urls import path
 
 from . import views
 
-chat_managment = [
+chat_management = [
     path("chat_info", views.ChatInfoView.as_view()),
     path("chat_create", views.ChatCreateView.as_view()),
     path("chats_all", views.ChatsAllView.as_view()),
@@ -27,4 +27,4 @@ schedule_get = [
     path("teachers/schedule", views.TeachersScheduleView.as_view()),
 ]
 
-urlpatterns = []
+urlpatterns = chat_management + get_methods + tech + schedule_get
