@@ -113,8 +113,11 @@ class UpdateNotbotView(APIView):
         try:
             operations.global_parser.sender.notbot._value = None
             operations.global_parser.sender.cookies._value = None
+            operations.teachers_parser.sender.notbot._value = None
+            operations.teachers_parser.sender.cookies._value = None
             notbot_value = operations.global_parser.sender.notbot.get_notbot()
-            if notbot_value:
+            notbot_value_teachers = operations.teachers_parser.sender.notbot.get_notbot()
+            if notbot_value and notbot_value_teachers:
                 return Response(status=200)
             raise ValueError("Expecting notbot_value to be set")
         except (ValueError, ConnectionError, Exception) as exception:
@@ -131,6 +134,19 @@ class ResetCacheView(APIView):
         faculty_name = request_data["faculty"]
 
         _, result = endpoint_operations.reset_cache(faculty_name=faculty_name, group_name=group_name)
+        count: int = list(result.values())[0]
+
+        return Response(status=200, data={"count": count, "status": "ok"})
+
+
+class ResetTeachersCacheView(APIView):
+    def post(self, request: Request):
+        request_data: dict[str, str] = request.data
+        teacher_id = request_data["teacher"]
+
+        _, result = model_files.TeacherScheduleCache.objects.filter(
+            teacher__external_id=teacher_id,
+        ).delete()
         count: int = list(result.values())[0]
 
         return Response(status=200, data={"count": count, "status": "ok"})
@@ -169,3 +185,90 @@ class ScheduleGetView(APIView):
         entity.save()
 
         return Response(data=schedule)
+
+
+class TeachersScheduleView(APIView):
+    def post(self, request: Request):
+        request_data: dict[str, str] = request.data
+        teacher_id = request_data["teacher"]
+
+        teacher: model_files.Teacher | None = model_files.Teacher.objects.filter(external_id=teacher_id).first()
+
+        if not teacher:
+            return Response(status=404)
+
+        if model_files.TeacherScheduleCache.objects.filter(
+            teacher=teacher,
+            expires_on__gte=timezone.now(),
+        ).exists():
+            return Response(
+                data=model_files.TeacherScheduleCache.objects.get(
+                    teacher=teacher,
+                ).schedule
+            )
+
+        schedule = operations.fetch_teacher_schedule(teacher_id=teacher_id)
+        entity, _ = model_files.TeacherScheduleCache.objects.get_or_create(teacher=teacher)
+        entity.schedule = schedule
+        entity.save()
+        return Response(data=schedule)
+
+
+class TeachersDepartmentsView(APIView):
+    def get(self, _: Request):
+        result = []
+        for department in model_files.Department.objects.all():
+            department: model_files.Department
+            result.append(department.as_json())
+        return Response(data=result)
+
+    def put(self, _: Request):
+        current_departments = operations.get_departments()
+        for department in current_departments:
+            names = department.get_department_name()
+            defaults = {
+                "short_name": names["short"],
+                "full_name": names["full"],
+            }
+            entity, created = model_files.Department.objects.update_or_create(
+                external_id=department.get_department_id(),
+                defaults=defaults,
+            )
+            logging.warning(f"Department: {entity=} created (or updated): {created=}")
+        return Response(status=200)
+
+
+class TeachersDepartmentView(APIView):
+    def get(self, request: Request):
+        result = []
+        request_data: dict[str, str] = request.data
+        department_id = request_data["department"]
+        for teacher in model_files.Teacher.objects.filter(
+            department_id=department_id,
+        ).all():
+            teacher: model_files.Teacher
+            result.append(teacher.as_json())
+        return Response(data=result)
+
+    def put(self, request: Request):
+        from ontu_parser.classes.dataclasses import Teacher
+
+        department_id = request.data["department"]
+        teachers: list[Teacher] = operations.get_teachers_by_department(
+            department=department_id,
+        )
+        for teacher in teachers:
+            names = teacher.get_teacher_name()
+            defaults = {
+                "short_name": names["short"],
+                "full_name": names["full"],
+                "department": model_files.Department.objects.filter(
+                    external_id=department_id,
+                ).first(),
+            }
+            entity, created = model_files.Teacher.objects.update_or_create(
+                external_id=teacher.get_teacher_id(),
+                defaults=defaults,
+            )
+            logging.warning(f"Teacher: {entity=} created (or updated): {created=}")
+        return Response(status=200)
