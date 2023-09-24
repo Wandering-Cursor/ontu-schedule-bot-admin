@@ -113,8 +113,11 @@ class UpdateNotbotView(APIView):
         try:
             operations.global_parser.sender.notbot._value = None
             operations.global_parser.sender.cookies._value = None
+            operations.teachers_parser.sender.notbot._value = None
+            operations.teachers_parser.sender.cookies._value = None
             notbot_value = operations.global_parser.sender.notbot.get_notbot()
-            if notbot_value:
+            notbot_value_teachers = operations.teachers_parser.sender.notbot.get_notbot()
+            if notbot_value and notbot_value_teachers:
                 return Response(status=200)
             raise ValueError("Expecting notbot_value to be set")
         except (ValueError, ConnectionError, Exception) as exception:
@@ -136,10 +139,47 @@ class ResetCacheView(APIView):
         return Response(status=200, data={"count": count, "status": "ok"})
 
 
+class ResetTeachersCacheView(APIView):
+    def post(self, request: Request):
+        request_data: dict[str, str] = request.data
+        teacher_id = request_data["teacher"]
+
+        _, result = model_files.TeacherScheduleCache.objects.filter(
+            teacher__external_id=teacher_id,
+        ).delete()
+        count: int = list(result.values())[0]
+
+        return Response(status=200, data={"count": count, "status": "ok"})
+
+
 # endregion
 
 
 class ScheduleGetView(APIView):
+    @staticmethod
+    def get_schedule(group: model_files.Group):
+        cache = ScheduleCache.objects.filter(
+            faculty=group.faculty.name,
+            group=group.name,
+            at_time__gte=timezone.now() - timezone.timedelta(minutes=45),
+        )
+        logging.error(f"Cache: {cache}")
+        if cache.exists():
+            return cache.first().schedule
+
+        schedule = operations.fetch_schedule(
+            faculty_name=group.faculty.name,
+            group_name=group.name,
+        )
+        logging.error(f"Schedule: {schedule}")
+        entity, _ = ScheduleCache.objects.get_or_create(
+            faculty=group.faculty.name,
+            group=group.name,
+        )
+        entity.schedule = schedule
+        entity.save()
+        return schedule
+
     def post(self, request: Request):
         request_data: dict[str, str] = request.data
         group_name = request_data["group"]
@@ -153,19 +193,116 @@ class ScheduleGetView(APIView):
             return Response(status=404)
 
         logging.error(f"Group: {group}")
-        cache = ScheduleCache.objects.filter(
-            faculty=faculty_name,
-            group=group_name,
-            at_time__gte=timezone.now() - timezone.timedelta(minutes=45),
+        return Response(data=self.get_schedule(group=group))
+
+
+class TeachersScheduleView(APIView):
+    def post(self, request: Request):
+        request_data: dict[str, str] = request.data
+        teacher_id = request_data["teacher"]
+
+        teacher: model_files.Teacher | None = model_files.Teacher.objects.filter(external_id=teacher_id).first()
+
+        if not teacher:
+            return Response(status=404)
+
+        if model_files.TeacherScheduleCache.objects.filter(
+            teacher=teacher,
+            expires_on__gte=timezone.now(),
+        ).exists():
+            return Response(
+                data=model_files.TeacherScheduleCache.objects.get(
+                    teacher=teacher,
+                ).schedule
+            )
+
+        schedule = operations.fetch_teacher_schedule(teacher_id=teacher_id)
+        entity, _ = model_files.TeacherScheduleCache.objects.get_or_create(
+            defaults={
+                "expires_on": timezone.now() + timezone.timedelta(hours=1),
+                "schedule": schedule,
+            },
+            teacher=teacher,
         )
-        logging.error(f"Cache: {cache}")
-        if cache.exists():
-            return Response(data=cache.first().schedule)
-
-        schedule = operations.fetch_schedule(faculty_name=group.faculty.name, group_name=group.name)
-        logging.error(f"Schedule: {schedule}")
-        entity, _ = ScheduleCache.objects.get_or_create(faculty=faculty_name, group=group_name)
-        entity.schedule = schedule
         entity.save()
-
         return Response(data=schedule)
+
+
+class TeachersDepartmentsView(APIView):
+    def get(self, _: Request):
+        result = []
+        for department in model_files.Department.objects.all():
+            department: model_files.Department
+            result.append(department.as_json())
+        return Response(data=result)
+
+    def put(self, _: Request):
+        current_departments = operations.get_departments()
+        for department in current_departments:
+            names = department.get_department_name()
+            defaults = {
+                "short_name": names["short"],
+                "full_name": names["full"],
+            }
+            entity, created = model_files.Department.objects.update_or_create(
+                external_id=department.get_department_id(),
+                defaults=defaults,
+            )
+            logging.warning(f"Department: {entity=} created (or updated): {created=}")
+        return Response(status=200)
+
+
+class TeachersDepartmentView(APIView):
+    def get(self, request: Request):
+        result = []
+        request_data: dict[str, str] = request.GET
+        department_id = request_data["department"]
+        for teacher in model_files.Teacher.objects.filter(
+            department__external_id=department_id,
+        ).all():
+            teacher: model_files.Teacher
+            result.append(teacher.as_json())
+        return Response(data=result)
+
+    def put(self, request: Request):
+        from ontu_parser.classes.dataclasses import Teacher
+
+        department_id = request.data["department"]
+        teachers: list[Teacher] = operations.get_teachers_by_department(
+            department_id=department_id,
+        )
+        for teacher in teachers:
+            names = teacher.get_teacher_name()
+            defaults = {
+                "short_name": names["short"],
+                "full_name": names["full"],
+                "department": model_files.Department.objects.filter(
+                    external_id=department_id,
+                ).first(),
+            }
+            entity, created = model_files.Teacher.objects.update_or_create(
+                external_id=teacher.get_teacher_id(),
+                defaults=defaults,
+            )
+            logging.warning(f"Teacher: {entity=} created (or updated): {created=}")
+        return Response(status=200)
+
+
+class BatchScheduleView(APIView):
+    def get(self, request: Request):
+        result: list[dict[str, str | dict | list[int]]] = []
+        active_subscriptions = model_files.Subscription.objects.filter(is_active=True).all()
+        for subscription in active_subscriptions:
+            subscription: model_files.Subscription
+            if not subscription.related_telegram_chats:
+                continue
+
+            result.append(
+                {
+                    "faculty_name": subscription.group.faculty.name,
+                    "group_name": subscription.group.name,
+                    "schedule": ScheduleGetView.get_schedule(group=subscription.group),
+                    "chat_ids": [chat.telegram_id for chat in subscription.related_telegram_chats],
+                }
+            )
+        return Response(data=result)

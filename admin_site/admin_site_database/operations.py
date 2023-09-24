@@ -1,14 +1,22 @@
 """Module of various operations"""
 
+from __future__ import annotations
+
 from ontu_parser.classes import Parser
-from ontu_parser.classes.dataclasses import Faculty, Group, BaseLesson
+from ontu_parser.classes.dataclasses import Faculty, Group, TeachersLesson, BaseStudentsLesson
 
 from admin_site_database.model_files import Faculty as model_Faculty
 
 from .decorators import do_until_success
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ontu_parser.classes.dataclasses import Teacher, TeachersPair, TeachersLesson
+
 
 global_parser = Parser()
+teachers_parser = Parser(kwargs={"for_teachers": True})
 
 
 @do_until_success
@@ -71,15 +79,40 @@ def fetch_schedule(faculty_name: str, group_name: str):
                 "lessons": converted_lessons,
                 "pair_no": pair.pair_no,
             }
+            pairs_per_day.append(data)
+        result["days"][day_name] = pairs_per_day
+
+    return result
+
+
+def get_departments():
+    return teachers_parser.get_departments()
+
+
+def get_teachers_by_department(department_id: str) -> "list[Teacher]":
+    return teachers_parser.get_teachers_by_department(department_id=department_id)
+
+
+def fetch_teacher_schedule(teacher_id: str):
+    schedule = teachers_parser.get_schedule(teacher_id=teacher_id)
+    result = {"days": {}}
+
+    for day_name, pairs in schedule.items():
+        pairs: "list[TeachersPair]"
+        pairs_per_day = []
+        for pair in pairs:
             pairs_per_day.append(
-                data
+                {
+                    "lesson": _convert_teachers_lesson(pair.lesson),
+                    "pair_no": pair.pair_no,
+                }
             )
         result["days"][day_name] = pairs_per_day
 
     return result
 
 
-def _convert_lesson(lesson: BaseLesson):
+def _convert_lesson(lesson: BaseStudentsLesson):
     return {
         "date": lesson.lesson_date,
         "teacher": {
@@ -92,4 +125,14 @@ def _convert_lesson(lesson: BaseLesson):
         },
         "lesson_info": lesson.lesson_info,
         "auditorium": lesson.auditorium,
+    }
+
+
+def _convert_teachers_lesson(lesson: TeachersLesson | None):
+    if not lesson:
+        return {}
+
+    return {
+        "name": lesson.name,
+        "groups": lesson.groups.split(", "),
     }
