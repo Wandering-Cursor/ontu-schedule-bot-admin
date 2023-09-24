@@ -24,6 +24,7 @@ tech = [
 
 schedule_get = [
     path("schedule_get", views.ScheduleGetView.as_view()),
+    path("batch_schedule", views.BatchScheduleView.as_view()),
     path("teachers/schedule", views.TeachersScheduleView.as_view()),
 ]
 

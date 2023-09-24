@@ -4,10 +4,7 @@ from django.contrib import admin
 
 
 class DepartmentAdmin(BaseAdmin):
-    list_display = BaseAdmin.list_display + [
-        "external_id",
-        "name",
-    ]
+    list_display = BaseAdmin.list_display + ["external_id", "short_name", "full_name"]
 
 
 admin.site.register(Department, DepartmentAdmin)

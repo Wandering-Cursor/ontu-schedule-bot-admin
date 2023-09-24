@@ -7,10 +7,10 @@ class TeacherScheduleCacheAdmin(BaseAdmin):
     list_display = BaseAdmin.list_display + [
         "teacher",
         "department",
+        "schedule",
     ]
     list_filter = [
         "teacher",
-        "department",
     ]
 
 

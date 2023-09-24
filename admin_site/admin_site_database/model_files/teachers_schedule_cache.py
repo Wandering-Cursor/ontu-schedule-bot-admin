@@ -14,6 +14,10 @@ class TeacherScheduleCache(BaseModel):
     )
     schedule = models.JSONField()
 
+    @property
+    def department(self):
+        return self.teacher.department
+
     def as_json(self):
         return {
             "expires_on": self.expires_on.isoformat(),

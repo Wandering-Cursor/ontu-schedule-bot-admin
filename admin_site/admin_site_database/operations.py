@@ -90,7 +90,7 @@ def get_departments():
 
 
 def get_teachers_by_department(department_id: str) -> "list[Teacher]":
-    return teachers_parser.get_teachers_by_department(department=department_id)
+    return teachers_parser.get_teachers_by_department(department_id=department_id)
 
 
 def fetch_teacher_schedule(teacher_id: str):
@@ -128,8 +128,11 @@ def _convert_lesson(lesson: BaseStudentsLesson):
     }
 
 
-def _convert_teachers_lesson(lesson: TeachersLesson):
+def _convert_teachers_lesson(lesson: TeachersLesson | None):
+    if not lesson:
+        return {}
+
     return {
         "name": lesson.name,
-        "groups": lesson.groups,
+        "groups": lesson.groups.split(", "),
     }

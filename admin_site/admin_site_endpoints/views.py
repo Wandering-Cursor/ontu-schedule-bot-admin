@@ -156,6 +156,30 @@ class ResetTeachersCacheView(APIView):
 
 
 class ScheduleGetView(APIView):
+    @staticmethod
+    def get_schedule(group: model_files.Group):
+        cache = ScheduleCache.objects.filter(
+            faculty=group.faculty.name,
+            group=group.name,
+            at_time__gte=timezone.now() - timezone.timedelta(minutes=45),
+        )
+        logging.error(f"Cache: {cache}")
+        if cache.exists():
+            return cache.first().schedule
+
+        schedule = operations.fetch_schedule(
+            faculty_name=group.faculty.name,
+            group_name=group.name,
+        )
+        logging.error(f"Schedule: {schedule}")
+        entity, _ = ScheduleCache.objects.get_or_create(
+            faculty=group.faculty.name,
+            group=group.name,
+        )
+        entity.schedule = schedule
+        entity.save()
+        return schedule
+
     def post(self, request: Request):
         request_data: dict[str, str] = request.data
         group_name = request_data["group"]
@@ -169,22 +193,7 @@ class ScheduleGetView(APIView):
             return Response(status=404)
 
         logging.error(f"Group: {group}")
-        cache = ScheduleCache.objects.filter(
-            faculty=faculty_name,
-            group=group_name,
-            at_time__gte=timezone.now() - timezone.timedelta(minutes=45),
-        )
-        logging.error(f"Cache: {cache}")
-        if cache.exists():
-            return Response(data=cache.first().schedule)
-
-        schedule = operations.fetch_schedule(faculty_name=group.faculty.name, group_name=group.name)
-        logging.error(f"Schedule: {schedule}")
-        entity, _ = ScheduleCache.objects.get_or_create(faculty=faculty_name, group=group_name)
-        entity.schedule = schedule
-        entity.save()
-
-        return Response(data=schedule)
+        return Response(data=self.get_schedule(group=group))
 
 
 class TeachersScheduleView(APIView):
@@ -208,8 +217,13 @@ class TeachersScheduleView(APIView):
             )
 
         schedule = operations.fetch_teacher_schedule(teacher_id=teacher_id)
-        entity, _ = model_files.TeacherScheduleCache.objects.get_or_create(teacher=teacher)
-        entity.schedule = schedule
+        entity, _ = model_files.TeacherScheduleCache.objects.get_or_create(
+            defaults={
+                "expires_on": timezone.now() + timezone.timedelta(hours=1),
+                "schedule": schedule,
+            },
+            teacher=teacher,
+        )
         entity.save()
         return Response(data=schedule)
 
@@ -241,10 +255,10 @@ class TeachersDepartmentsView(APIView):
 class TeachersDepartmentView(APIView):
     def get(self, request: Request):
         result = []
-        request_data: dict[str, str] = request.data
+        request_data: dict[str, str] = request.GET
         department_id = request_data["department"]
         for teacher in model_files.Teacher.objects.filter(
-            department_id=department_id,
+            department__external_id=department_id,
         ).all():
             teacher: model_files.Teacher
             result.append(teacher.as_json())
@@ -255,7 +269,7 @@ class TeachersDepartmentView(APIView):
 
         department_id = request.data["department"]
         teachers: list[Teacher] = operations.get_teachers_by_department(
-            department=department_id,
+            department_id=department_id,
         )
         for teacher in teachers:
             names = teacher.get_teacher_name()
@@ -272,3 +286,23 @@ class TeachersDepartmentView(APIView):
             )
             logging.warning(f"Teacher: {entity=} created (or updated): {created=}")
         return Response(status=200)
+
+
+class BatchScheduleView(APIView):
+    def get(self, request: Request):
+        result: list[dict[str, str | dict | list[int]]] = []
+        active_subscriptions = model_files.Subscription.objects.filter(is_active=True).all()
+        for subscription in active_subscriptions:
+            subscription: model_files.Subscription
+            if not subscription.related_telegram_chats:
+                continue
+
+            result.append(
+                {
+                    "faculty_name": subscription.group.faculty.name,
+                    "group_name": subscription.group.name,
+                    "schedule": ScheduleGetView.get_schedule(group=subscription.group),
+                    "chat_ids": [chat.telegram_id for chat in subscription.related_telegram_chats],
+                }
+            )
+        return Response(data=result)
