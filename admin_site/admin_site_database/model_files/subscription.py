@@ -11,20 +11,33 @@ from admin_site_database.model_files.group import Group
 
 if TYPE_CHECKING:
     from admin_site_database.model_files.telegram_chat import TelegramChat
+    from admin_site_database.model_files.teacher import Teacher
 
 
 class Subscription(BaseModel):
     """Model for tracking schedule subscriptions for chats"""
 
     is_active = models.BooleanField()
-    group = models.ForeignKey(to=Group, on_delete=models.CASCADE, related_name="subscriptions")
+    group: "Group" = models.ForeignKey(
+        to=Group,
+        on_delete=models.CASCADE,
+        related_name="subscriptions",
+        null=True,
+        blank=True,
+    )
+    teacher: "Teacher" = models.ForeignKey(
+        to="Teacher",
+        on_delete=models.CASCADE,
+        related_name="subscriptions",
+        null=True,
+        blank=True,
+    )
 
     def as_json(self):
-        # I'm not sure how to handle this properly :|
-        self.group: Group
         return {
             "is_active": self.is_active,
-            "group": self.group.as_json(),
+            "group": self.group.as_json() if self.group else None,
+            "teacher": self.teacher.as_json() if self.teacher else None,
         }
 
     @property
@@ -39,6 +52,6 @@ class Subscription(BaseModel):
         return list(subscribed_chats)
 
     def __str__(self) -> str:
-        return f"To: {self.group.name}"
+        return f"To: {self.group} | {self.teacher}"
 
     objects = admin_db.SubscriptionManager

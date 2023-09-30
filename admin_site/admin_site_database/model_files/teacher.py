@@ -2,10 +2,16 @@
 Teachers model, for teachers schedule
 """
 
+from __future__ import annotations
+from typing import TYPE_CHECKING
 
 from django.db import models
 
 from .base import BaseModel
+
+
+if TYPE_CHECKING:
+    from .department import Department
 
 
 class Teacher(BaseModel):
@@ -13,7 +19,7 @@ class Teacher(BaseModel):
     short_name = models.CharField(max_length=255)
     full_name = models.TextField()
 
-    department = models.ForeignKey(
+    department: "Department" = models.ForeignKey(
         "Department",
         on_delete=models.CASCADE,
         related_name="teachers",
@@ -26,3 +32,6 @@ class Teacher(BaseModel):
             "full_name": self.full_name,
             "department": self.department.as_json(),
         }
+
+    def __str__(self) -> str:
+        return f"{self.short_name} - {self.department}"
