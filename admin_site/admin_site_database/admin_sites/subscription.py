@@ -14,10 +14,12 @@ class SubscriptionAdmin(BaseAdmin):
     Admin site for Subscription.
     Also shows related telegram chats.
     """
+
     list_display = BaseAdmin.list_display + [
-        'is_active',
-        'group',
-        'get_telegram_chats'
+        "is_active",
+        "group",
+        "teacher",
+        "get_telegram_chats",
     ]
 
     def get_telegram_chats(self, obj: Subscription):

@@ -25,7 +25,9 @@ class BaseAPIView(APIView):
 class ChatInfoView(BaseAPIView):
     def post(self, request: Request):
         request_data: dict[str, object] = request.data
-        telegram_chat = model_files.TelegramChat.objects.filter(telegram_id=request_data["chat_id"]).first()
+        telegram_chat = model_files.TelegramChat.objects.filter(
+            telegram_id=request_data["chat_id"]
+        ).first()
         if isinstance(telegram_chat, model_files.TelegramChat):
             return Response(
                 data={
@@ -42,7 +44,9 @@ class ChatCreateView(BaseAPIView):
     def post(self, request: Request):
         request_data: dict[str, object] = request.data
         chat, created = model_files.TelegramChat.objects.get_or_create(
-            telegram_id=request_data["chat_id"], name=request_data["chat_name"], chat_info=request_data["chat_info"]
+            telegram_id=request_data["chat_id"],
+            name=request_data["chat_name"],
+            chat_info=request_data["chat_info"],
         )
         chat: model_files.TelegramChat
         if created:
@@ -60,11 +64,29 @@ class ChatsAllView(BaseAPIView):
 
 
 class ChatUpdateView(BaseAPIView):
+    def _get_group(self, group_info: dict[str, str]) -> model_files.Group | None:
+        group = model_files.Group.objects.filter(
+            name=group_info["name"],
+            faculty__name=group_info["faculty"],
+        ).first()
+        if not group:
+            return None
+        return group
+
+    def _get_teacher(self, teacher_info: dict[str, str]) -> model_files.Teacher | None:
+        teacher = model_files.Teacher.objects.filter(
+            external_id=teacher_info["external_id"],
+        ).first()
+        if not teacher:
+            return None
+        return teacher
+
     def post(self, request: Request):
         request_data = request.data
 
         telegram_id = request_data["chat_id"]
-        group_info = request_data["group"]
+        group_info = request_data.get("group", None)
+        teacher_info = request_data.get("teacher", None)
         is_active = request_data["is_active"]
 
         telegram_chat: model_files.TelegramChat = model_files.TelegramChat.objects.filter(
@@ -73,15 +95,32 @@ class ChatUpdateView(BaseAPIView):
         if not telegram_chat:
             return Response(status=404)
 
-        group = model_files.Group.objects.filter(name=group_info["name"], faculty__name=group_info["faculty"]).first()
-        if not group:
-            return Response(status=404)
+        if not group_info and not teacher_info:
+            return Response(status=400)
 
-        subscription, _ = model_files.Subscription.objects.update_or_create(is_active=is_active, group=group)
+        group = None
+        teacher = None
+        if group_info:
+            group = self._get_group(group_info)
+            if not group:
+                return Response(status=404)
+
+        if teacher_info:
+            teacher = self._get_teacher(teacher_info)
+            if not teacher:
+                return Response(status=404)
+
+        subscription, _ = model_files.Subscription.objects.update_or_create(
+            is_active=is_active,
+            group=group,
+            teacher=teacher,
+        )
         subscription: model_files.Subscription
         telegram_chat.subscription = subscription
         subscription.save()
         telegram_chat.save()
+        model_files.Subscription.objects.filter(telegram_chats=None).delete()
+
         return Response(data={"status": "ok", **subscription.as_json()})
 
 
@@ -102,7 +141,9 @@ class GroupsGetView(APIView):
     def post(self, request: Request):
         request_data: dict[str, str] = request.data
         result = []
-        for group in model_files.Group.objects.filter(faculty__name=request_data["faculty_name"]).all():
+        for group in model_files.Group.objects.filter(
+            faculty__name=request_data["faculty_name"]
+        ).all():
             group: model_files.Group
             result.append(group.as_json())
         return Response(data=result)
@@ -133,7 +174,9 @@ class ResetCacheView(APIView):
         group_name = request_data["group"]
         faculty_name = request_data["faculty"]
 
-        _, result = endpoint_operations.reset_cache(faculty_name=faculty_name, group_name=group_name)
+        _, result = endpoint_operations.reset_cache(
+            faculty_name=faculty_name, group_name=group_name
+        )
         count: int = list(result.values())[0]
 
         return Response(status=200, data={"count": count, "status": "ok"})
@@ -197,26 +240,17 @@ class ScheduleGetView(APIView):
 
 
 class TeachersScheduleView(APIView):
-    def post(self, request: Request):
-        request_data: dict[str, str] = request.data
-        teacher_id = request_data["teacher"]
-
-        teacher: model_files.Teacher | None = model_files.Teacher.objects.filter(external_id=teacher_id).first()
-
-        if not teacher:
-            return Response(status=404)
-
+    @staticmethod
+    def get_schedule(teacher: model_files.Teacher):
         if model_files.TeacherScheduleCache.objects.filter(
             teacher=teacher,
             expires_on__gte=timezone.now(),
         ).exists():
-            return Response(
-                data=model_files.TeacherScheduleCache.objects.get(
-                    teacher=teacher,
-                ).schedule
-            )
+            return model_files.TeacherScheduleCache.objects.get(
+                teacher=teacher,
+            ).schedule
 
-        schedule = operations.fetch_teacher_schedule(teacher_id=teacher_id)
+        schedule = operations.fetch_teacher_schedule(teacher_id=teacher.external_id)
         entity, _ = model_files.TeacherScheduleCache.objects.get_or_create(
             defaults={
                 "expires_on": timezone.now() + timezone.timedelta(hours=1),
@@ -225,6 +259,20 @@ class TeachersScheduleView(APIView):
             teacher=teacher,
         )
         entity.save()
+        return schedule
+
+    def post(self, request: Request):
+        request_data: dict[str, str] = request.data
+        teacher_id = request_data["teacher"]
+
+        teacher: model_files.Teacher | None = model_files.Teacher.objects.filter(
+            external_id=teacher_id
+        ).first()
+
+        if not teacher:
+            return Response(status=404)
+
+        schedule = self.get_schedule(teacher=teacher)
         return Response(data=schedule)
 
 
@@ -267,24 +315,30 @@ class TeachersDepartmentView(APIView):
     def put(self, request: Request):
         from ontu_parser.classes.dataclasses import Teacher
 
+        departments: list[int] = []
         department_id = request.data["department"]
-        teachers: list[Teacher] = operations.get_teachers_by_department(
-            department_id=department_id,
-        )
-        for teacher in teachers:
-            names = teacher.get_teacher_name()
-            defaults = {
-                "short_name": names["short"],
-                "full_name": names["full"],
-                "department": model_files.Department.objects.filter(
-                    external_id=department_id,
-                ).first(),
-            }
-            entity, created = model_files.Teacher.objects.update_or_create(
-                external_id=teacher.get_teacher_id(),
-                defaults=defaults,
+        if not department_id:
+            departments = [x.external_id for x in model_files.Department.objects.all()]
+        else:
+            departments = [department_id]
+        for department_id in departments:
+            teachers: list[Teacher] = operations.get_teachers_by_department(
+                department_id=department_id,
             )
-            logging.warning(f"Teacher: {entity=} created (or updated): {created=}")
+            for teacher in teachers:
+                names = teacher.get_teacher_name()
+                defaults = {
+                    "short_name": names["short"],
+                    "full_name": names["full"],
+                    "department": model_files.Department.objects.filter(
+                        external_id=department_id,
+                    ).first(),
+                }
+                entity, created = model_files.Teacher.objects.update_or_create(
+                    external_id=teacher.get_teacher_id(),
+                    defaults=defaults,
+                )
+                logging.warning(f"Teacher: {entity=} created (or updated): {created=}")
         return Response(status=200)
 
 
@@ -297,12 +351,27 @@ class BatchScheduleView(APIView):
             if not subscription.related_telegram_chats:
                 continue
 
-            result.append(
-                {
-                    "faculty_name": subscription.group.faculty.name,
-                    "group_name": subscription.group.name,
-                    "schedule": ScheduleGetView.get_schedule(group=subscription.group),
-                    "chat_ids": [chat.telegram_id for chat in subscription.related_telegram_chats],
-                }
-            )
+            if subscription.group:
+                result.append(
+                    {
+                        "faculty_name": subscription.group.faculty.name,
+                        "group_name": subscription.group.name,
+                        "schedule": ScheduleGetView.get_schedule(group=subscription.group),
+                        "chat_ids": [
+                            chat.telegram_id for chat in subscription.related_telegram_chats
+                        ],
+                    }
+                )
+            elif subscription.teacher:
+                result.append(
+                    {
+                        "department": subscription.teacher.department.short_name,
+                        "teacher": subscription.teacher.full_name,
+                        "schedule": TeachersScheduleView.get_schedule(teacher=subscription.teacher),
+                        "chat_ids": [
+                            chat.telegram_id for chat in subscription.related_telegram_chats
+                        ],
+                    }
+                )
+
         return Response(data=result)
