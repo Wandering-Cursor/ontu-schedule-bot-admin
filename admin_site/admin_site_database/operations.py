@@ -44,28 +44,7 @@ def fetch_groups(faculty_entities: list[model_Faculty]) -> dict[model_Faculty, l
 
 
 @do_until_success
-def fetch_schedule(faculty_name: str, group_name: str):
-    faculty_id: int | None = None
-    group_id: int | None = None
-
-    schedule: dict | None = None
-
-    faculties = global_parser.get_faculties()
-    for faculty in faculties:
-        if faculty.get_faculty_name() == faculty_name:
-            faculty_id = faculty.get_faculty_id()
-            break
-    else:
-        raise ValueError("Could not get faculty by name", faculty_name, faculties)
-
-    groups = global_parser.get_groups(faculty_id=faculty_id)
-    for group in groups:
-        if group.get_group_name() == group_name:
-            group_id = group.get_group_id()
-            break
-    else:
-        raise ValueError("Could not get group by name", faculty_name, group_name, groups)
-
+def get_schedule_by_group_id(group_id: int):
     schedule = global_parser.get_schedule(group_id=group_id)
     result = {"days": {}}
 
@@ -83,6 +62,29 @@ def fetch_schedule(faculty_name: str, group_name: str):
         result["days"][day_name] = pairs_per_day
 
     return result
+
+
+def get_schedule_by_names(faculty_name: str, group_name: str):
+    faculty_id: int | None = None
+    group_id: int | None = None
+
+    faculties = global_parser.get_faculties()
+    for faculty in faculties:
+        if faculty.get_faculty_name() == faculty_name:
+            faculty_id = faculty.get_faculty_id()
+            break
+    else:
+        raise ValueError("Could not get faculty by name", faculty_name, faculties)
+
+    groups = global_parser.get_groups(faculty_id=faculty_id)
+    for group in groups:
+        if group.get_group_name() == group_name:
+            group_id = group.get_group_id()
+            break
+    else:
+        raise ValueError("Could not get group by name", faculty_name, group_name, groups)
+
+    return get_schedule_by_group_id(group_id=group_id)
 
 
 def get_departments():

@@ -26,7 +26,7 @@ class ChatInfoView(BaseAPIView):
     def post(self, request: Request):
         request_data: dict[str, object] = request.data
         telegram_chat = model_files.TelegramChat.objects.filter(
-            telegram_id=request_data["chat_id"]
+            telegram_id=request_data["chat_id"],
         ).first()
         if isinstance(telegram_chat, model_files.TelegramChat):
             return Response(
@@ -142,7 +142,7 @@ class GroupsGetView(APIView):
         request_data: dict[str, str] = request.data
         result = []
         for group in model_files.Group.objects.filter(
-            faculty__name=request_data["faculty_name"]
+            faculty__name=request_data["faculty_name"],
         ).all():
             group: model_files.Group
             result.append(group.as_json())
@@ -175,7 +175,8 @@ class ResetCacheView(APIView):
         faculty_name = request_data["faculty"]
 
         _, result = endpoint_operations.reset_cache(
-            faculty_name=faculty_name, group_name=group_name
+            faculty_name=faculty_name,
+            group_name=group_name,
         )
         count: int = list(result.values())[0]
 
@@ -200,7 +201,7 @@ class ResetTeachersCacheView(APIView):
 
 class ScheduleGetView(APIView):
     @staticmethod
-    def get_schedule(group: model_files.Group):
+    def get_cached_schedule(group: model_files.Group):
         cache = ScheduleCache.objects.filter(
             faculty=group.faculty.name,
             group=group.name,
@@ -210,10 +211,8 @@ class ScheduleGetView(APIView):
         if cache.exists():
             return cache.first().schedule
 
-        schedule = operations.fetch_schedule(
-            faculty_name=group.faculty.name,
-            group_name=group.name,
-        )
+    @staticmethod
+    def add_schedule_to_cache(group: model_files.Group, schedule: dict):
         logging.error(f"Schedule: {schedule}")
         entity, _ = ScheduleCache.objects.get_or_create(
             faculty=group.faculty.name,
@@ -221,6 +220,28 @@ class ScheduleGetView(APIView):
         )
         entity.schedule = schedule
         entity.save()
+
+    @staticmethod
+    def get_schedule(group: model_files.Group):
+        cached_schedule = ScheduleGetView.get_cached_schedule(group=group)
+        if cached_schedule:
+            return cached_schedule
+
+        schedule = operations.get_schedule_by_names(
+            faculty_name=group.faculty.name,
+            group_name=group.name,
+        )
+        ScheduleGetView.add_schedule_to_cache(group=group, schedule=schedule)
+        return schedule
+
+    @staticmethod
+    def get_schedule_for_batch(group: model_files.Group, group_id: int):
+        cached_schedule = ScheduleGetView.get_cached_schedule(group=group)
+        if cached_schedule:
+            return cached_schedule
+
+        schedule = operations.get_schedule_by_group_id(group_id=group_id)
+        ScheduleGetView.add_schedule_to_cache(group=group, schedule=schedule)
         return schedule
 
     def post(self, request: Request):
@@ -266,7 +287,7 @@ class TeachersScheduleView(APIView):
         teacher_id = request_data["teacher"]
 
         teacher: model_files.Teacher | None = model_files.Teacher.objects.filter(
-            external_id=teacher_id
+            external_id=teacher_id,
         ).first()
 
         if not teacher:
@@ -346,20 +367,39 @@ class BatchScheduleView(APIView):
     def get(self, request: Request):
         result: list[dict[str, str | dict | list[int]]] = []
         active_subscriptions = model_files.Subscription.objects.filter(is_active=True).all()
+        groups_per_faculty_tmp = operations.fetch_groups(
+            faculty_entities=[faculty for faculty in model_files.Faculty.objects.all()]
+        )
+        groups_per_faculty: dict[str, dict[str, int]] = {}
+        for faculty, groups in groups_per_faculty_tmp.items():
+            new_groups: dict[str, int] = {}
+            for group in groups:
+                new_groups[group.get_group_name()] = int(group.get_group_id())
+            groups_per_faculty[faculty.name] = new_groups
+
         for subscription in active_subscriptions:
             subscription: model_files.Subscription
             if not subscription.related_telegram_chats:
                 continue
 
             if subscription.group:
+                faculty = subscription.group.faculty
+                group = subscription.group
+
+                group_id = groups_per_faculty[faculty.name].get(group.name, None)
+                if group_id is None:
+                    logging.error(f"Group {group.name} not found in {faculty.name}")
+                    continue
+
                 result.append(
                     {
                         "faculty_name": subscription.group.faculty.name,
                         "group_name": subscription.group.name,
-                        "schedule": ScheduleGetView.get_schedule(group=subscription.group),
-                        "chat_ids": [
-                            chat.telegram_id for chat in subscription.related_telegram_chats
-                        ],
+                        "schedule": ScheduleGetView.get_schedule_for_batch(
+                            group=subscription.group,
+                            group_id=group_id,
+                        ),
+                        "chat_ids": [chat.telegram_id for chat in subscription.related_telegram_chats],
                     }
                 )
             elif subscription.teacher:
@@ -368,9 +408,7 @@ class BatchScheduleView(APIView):
                         "department": subscription.teacher.department.short_name,
                         "teacher": subscription.teacher.full_name,
                         "schedule": TeachersScheduleView.get_schedule(teacher=subscription.teacher),
-                        "chat_ids": [
-                            chat.telegram_id for chat in subscription.related_telegram_chats
-                        ],
+                        "chat_ids": [chat.telegram_id for chat in subscription.related_telegram_chats],
                     }
                 )
 
