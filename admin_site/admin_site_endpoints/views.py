@@ -25,15 +25,11 @@ class BaseAPIView(APIView):
 class ChatInfoView(BaseAPIView):
     def post(self, request: Request):
         request_data: dict[str, object] = request.data
-        telegram_chat_qs = model_files.TelegramChat.objects.filter(
+        telegram_chat = model_files.TelegramChat.objects.filter(
             telegram_id=request_data["chat_id"],
-        )
-        if topic_id := request_data.get("topic_id", None):
-            telegram_chat_qs = telegram_chat_qs.filter(
-                topic_id=topic_id,
-            )
+            topic_id=request_data["topic_id"],
+        ).first()
 
-        telegram_chat = telegram_chat_qs.first()
         if isinstance(telegram_chat, model_files.TelegramChat):
             return Response(
                 data={
