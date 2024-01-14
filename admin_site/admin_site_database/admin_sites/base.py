@@ -10,8 +10,9 @@ class BaseAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
     """
     Base Admin Class. Use it as basis for other admin sites
     """
-    list_display = ['id', 'created', 'updated']
 
-    readonly_fields = ['id', 'created', 'updated']
+    list_display = ["id", "created", "updated"]
 
-    ordering = ['-created']
+    readonly_fields = ["id", "created", "updated"]
+
+    ordering = ["-created"]

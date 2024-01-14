@@ -25,9 +25,15 @@ class BaseAPIView(APIView):
 class ChatInfoView(BaseAPIView):
     def post(self, request: Request):
         request_data: dict[str, object] = request.data
-        telegram_chat = model_files.TelegramChat.objects.filter(
+        telegram_chat_qs = model_files.TelegramChat.objects.filter(
             telegram_id=request_data["chat_id"],
-        ).first()
+        )
+        if topic_id := request_data.get("topic_id", None):
+            telegram_chat_qs = telegram_chat_qs.filter(
+                topic_id=topic_id,
+            )
+
+        telegram_chat = telegram_chat_qs.first()
         if isinstance(telegram_chat, model_files.TelegramChat):
             return Response(
                 data={
@@ -46,9 +52,12 @@ class ChatCreateView(BaseAPIView):
         chat, created = model_files.TelegramChat.objects.get_or_create(
             telegram_id=request_data["chat_id"],
             name=request_data["chat_name"],
-            chat_info=request_data["chat_info"],
+            topic_id=request_data["thread_id"],
+            defaults={
+                "chat_info": request_data["chat_info"],
+                "is_forum": request_data["is_forum"],
+            },
         )
-        chat: model_files.TelegramChat
         if created:
             chat.save()
         return Response(data={"status": "ok", **chat.as_json()})
@@ -85,13 +94,17 @@ class ChatUpdateView(BaseAPIView):
         request_data = request.data
 
         telegram_id = request_data["chat_id"]
+        topic_id = request_data["topic_id"]
         group_info = request_data.get("group", None)
         teacher_info = request_data.get("teacher", None)
         is_active = request_data["is_active"]
 
-        telegram_chat: model_files.TelegramChat = model_files.TelegramChat.objects.filter(
-            telegram_id=telegram_id
-        ).first()
+        telegram_chat: model_files.TelegramChat = (
+            model_files.TelegramChat.objects.filter(
+                telegram_id=telegram_id,
+                topic_id=topic_id,
+            ).first()
+        )
         if not telegram_chat:
             return Response(status=404)
 
@@ -157,7 +170,9 @@ class UpdateNotbotView(APIView):
             operations.teachers_parser.sender.notbot._value = None
             operations.teachers_parser.sender.cookies._value = None
             notbot_value = operations.global_parser.sender.notbot.get_notbot()
-            notbot_value_teachers = operations.teachers_parser.sender.notbot.get_notbot()
+            notbot_value_teachers = (
+                operations.teachers_parser.sender.notbot.get_notbot()
+            )
             if notbot_value and notbot_value_teachers:
                 return Response(status=200)
             raise ValueError("Expecting notbot_value to be set")
@@ -366,7 +381,9 @@ class TeachersDepartmentView(APIView):
 class BatchScheduleView(APIView):
     def get(self, request: Request):
         result: list[dict[str, str | dict | list[int]]] = []
-        active_subscriptions = model_files.Subscription.objects.filter(is_active=True).all()
+        active_subscriptions = model_files.Subscription.objects.filter(
+            is_active=True
+        ).all()
         groups_per_faculty_tmp = operations.fetch_groups(
             faculty_entities=[faculty for faculty in model_files.Faculty.objects.all()]
         )
@@ -399,7 +416,13 @@ class BatchScheduleView(APIView):
                             group=subscription.group,
                             group_id=group_id,
                         ),
-                        "chat_ids": [chat.telegram_id for chat in subscription.related_telegram_chats],
+                        "chat_info": [
+                            {
+                                "chat_id": chat.telegram_id,
+                                "topic_id": chat.topic_id,
+                            }
+                            for chat in subscription.related_telegram_chats
+                        ],
                     }
                 )
             elif subscription.teacher:
@@ -407,8 +430,13 @@ class BatchScheduleView(APIView):
                     {
                         "department": subscription.teacher.department.short_name,
                         "teacher": subscription.teacher.full_name,
-                        "schedule": TeachersScheduleView.get_schedule(teacher=subscription.teacher),
-                        "chat_ids": [chat.telegram_id for chat in subscription.related_telegram_chats],
+                        "schedule": TeachersScheduleView.get_schedule(
+                            teacher=subscription.teacher
+                        ),
+                        "chat_ids": [
+                            chat.telegram_id
+                            for chat in subscription.related_telegram_chats
+                        ],
                     }
                 )
 

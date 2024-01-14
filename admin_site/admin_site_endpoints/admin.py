@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.http.request import HttpRequest
 
 from djangoql.admin import DjangoQLSearchMixin
 
@@ -9,14 +10,12 @@ class BaseAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
     """
     Base Admin Class. Use it as basis for other admin sites
     """
-    pass
+
+    def get_list_display(self, request: HttpRequest):
+        return [field.name for field in self.Meta.model._meta.get_fields()]
 
 
 @admin.register(ScheduleCache)
 class ScheduleCacheAdmin(BaseAdmin):
-    list_display = [
-        'faculty',
-        'group',
-        'schedule',
-        'at_time'
-    ]
+    class Meta:
+        model = ScheduleCache

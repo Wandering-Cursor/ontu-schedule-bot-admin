@@ -14,6 +14,7 @@ class TelegramChat(BaseModel):
     Chat is either a person, or a group
     Chat should receive schedule if they have a subscription
     """
+
     telegram_id = models.BigIntegerField()
     name = models.TextField()
 
@@ -22,24 +23,24 @@ class TelegramChat(BaseModel):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name="telegram_chats"
+        related_name="telegram_chats",
     )
-    chat_info = models.JSONField(
-        blank=True,
-        null=True
-    )
+    chat_info = models.JSONField(blank=True, null=True)
+
+    is_forum = models.BooleanField(default=False)
+    topic_id = models.IntegerField(blank=True, null=True)
 
     objects = admin_db.TelegramChatManager
 
     def as_json(self):
         data = {
-            'chat_id': self.telegram_id,
-            'chat_name': self.name,
+            "chat_id": self.telegram_id,
+            "chat_name": self.name,
         }
         # I'm not sure how to handle this properly :|
         self.subscription: Subscription
         if self.subscription:
-            data['subscription'] = self.subscription.as_json()
+            data["subscription"] = self.subscription.as_json()
         return data
 
     def __str__(self) -> str:
