@@ -1,13 +1,10 @@
 """
 A message campaign (mass-sending of messages)
 """
-import requests
-
-from django.db import models
-from django.utils.safestring import mark_safe
-
 from admin_site_database.model_files.base import BaseModel
 from admin_site_database.model_files.telegram_chat import TelegramChat
+from django.db import models
+from django.utils.safestring import mark_safe
 
 
 class MessageCampaign(BaseModel):
@@ -17,6 +14,7 @@ class MessageCampaign(BaseModel):
     Raises:
         NotImplementedError: if you call as_json
     """
+
     bot_key = models.CharField(
         max_length=128,
         blank=False,
@@ -27,34 +25,18 @@ class MessageCampaign(BaseModel):
         blank=False,
     )
 
-    def as_json(self):
-        raise NotImplementedError(
-            "You should not call as_json for MessageCampaign objects"
-        )
+    def as_json(self) -> dict[str, list[str] | str]:
+        return {
+            "to_chats": [chat.telegram_id for chat in self.to_chats.all()],
+            "message": self.message,
+        }
 
     message = models.TextField(max_length=4096)
-
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-        telegram_api_url = f"https://api.telegram.org/bot{self.bot_key}/sendMessage"
-
-        # You have to save campaign and then resave it to send messages
-        for chat in self.to_chats.all():  # type: ignore
-            chat: TelegramChat
-            response = requests.get(
-                url=telegram_api_url,
-                data={
-                    'chat_id': chat.telegram_id,
-                    'text': self.message,
-                    'parse_mode': 'HTML'
-                },
-                timeout=5
-            )
 
     @property
     def safe_bot_key(self):
         """Last few characters of bot_key"""
-        safe_key = ''
+        safe_key = ""
         safe_key += self.bot_key[-6:]
         return safe_key
 
@@ -68,4 +50,4 @@ class MessageCampaign(BaseModel):
 
     @property
     def get_to_chats(self):
-        return list(self.to_chats.all())  #type: ignore
+        return list(self.to_chats.all())  # type: ignore

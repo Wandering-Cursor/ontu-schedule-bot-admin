@@ -1,5 +1,5 @@
-from django.utils import timezone
 from django.db import models
+from django.utils import timezone
 
 from .base import BaseModel
 from .teacher import Teacher

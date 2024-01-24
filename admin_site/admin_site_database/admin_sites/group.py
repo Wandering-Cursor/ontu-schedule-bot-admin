@@ -1,11 +1,9 @@
 """
 Admin Site for ONTU Groups.
 """
-from django.contrib import admin
-
-
-from admin_site_database.model_files import Group
 from admin_site_database.admin_sites.base import BaseAdmin
+from admin_site_database.model_files import Group
+from django.contrib import admin
 
 
 @admin.register(Group)

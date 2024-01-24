@@ -2,9 +2,8 @@
 Message Campaign site
 """
 
-from django.contrib import admin
-
 from admin_site_database.model_files import MessageCampaign
+from django.contrib import admin
 
 from .base import BaseAdmin
 

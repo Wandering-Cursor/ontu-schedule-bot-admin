@@ -1,10 +1,9 @@
 """
 Settings model
 """
-from django.db import models
-
 from admin_site_database import db as admin_db
 from admin_site_database.model_files import BaseModel
+from django.db import models
 
 
 class Settings(BaseModel):

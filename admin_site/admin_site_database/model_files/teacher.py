@@ -3,12 +3,12 @@ Teachers model, for teachers schedule
 """
 
 from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 from django.db import models
 
 from .base import BaseModel
-
 
 if TYPE_CHECKING:
     from .department import Department

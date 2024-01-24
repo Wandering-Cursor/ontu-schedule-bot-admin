@@ -1,10 +1,9 @@
 """
 Faculty Model
 """
-from django.db import models
-
 from admin_site_database import db as admin_db
 from admin_site_database.model_files.base import BaseModel
+from django.db import models
 
 
 class Faculty(BaseModel):

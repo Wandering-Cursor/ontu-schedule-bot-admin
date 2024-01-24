@@ -2,16 +2,17 @@
 Subscription Model
 """
 from __future__ import annotations
+
 from typing import TYPE_CHECKING
-from django.db import models
 
 from admin_site_database import db as admin_db
 from admin_site_database.model_files.base import BaseModel
 from admin_site_database.model_files.group import Group
+from django.db import models
 
 if TYPE_CHECKING:
-    from admin_site_database.model_files.telegram_chat import TelegramChat
     from admin_site_database.model_files.teacher import Teacher
+    from admin_site_database.model_files.telegram_chat import TelegramChat
 
 
 class Subscription(BaseModel):

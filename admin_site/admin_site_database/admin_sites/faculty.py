@@ -1,16 +1,11 @@
 """
 Admin Site for Faculty and actions.
 """
-from django.contrib import admin
-
-from django.db import transaction
-
-from admin_site_database.model_files import (
-    Faculty,
-    Group
-)
 from admin_site_database import operations
 from admin_site_database.admin_sites.base import BaseAdmin
+from admin_site_database.model_files import Faculty, Group
+from django.contrib import admin
+from django.db import transaction
 
 
 @admin.action(description="Update list of Faculties")

@@ -1,6 +1,5 @@
 from django.contrib import admin
 from django.http.request import HttpRequest
-
 from djangoql.admin import DjangoQLSearchMixin
 
 from .models import ScheduleCache

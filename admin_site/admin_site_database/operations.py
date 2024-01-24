@@ -2,17 +2,18 @@
 
 from __future__ import annotations
 
-from ontu_parser.classes import Parser
-from ontu_parser.classes.dataclasses import Faculty, Group, TeachersLesson, BaseStudentsLesson
+from typing import TYPE_CHECKING
 
 from admin_site_database.model_files import Faculty as model_Faculty
+from ontu_parser.classes import Parser
+from ontu_parser.classes.dataclasses import (BaseStudentsLesson, Faculty,
+                                             Group, TeachersLesson)
 
 from .decorators import do_until_success
 
-from typing import TYPE_CHECKING
-
 if TYPE_CHECKING:
-    from ontu_parser.classes.dataclasses import Teacher, TeachersPair, TeachersLesson
+    from ontu_parser.classes.dataclasses import (Teacher, TeachersLesson,
+                                                 TeachersPair)
 
 
 global_parser = Parser()

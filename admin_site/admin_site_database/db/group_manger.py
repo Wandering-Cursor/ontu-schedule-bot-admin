@@ -2,5 +2,6 @@
 
 from .base import BaseManager
 
+
 class GroupManager(BaseManager):
     """Manger for Group"""

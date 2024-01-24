@@ -1,10 +1,9 @@
 """
 Core site views
 """
-from rest_framework.views import APIView
-
 from django.http.request import HttpRequest
 from django.shortcuts import render
+from rest_framework.views import APIView
 
 
 class BaseView(APIView):

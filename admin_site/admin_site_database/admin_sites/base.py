@@ -2,7 +2,6 @@
 Base Admin class. Provides handy lists and ordering
 """
 from django.contrib import admin
-
 from djangoql.admin import DjangoQLSearchMixin
 
 
