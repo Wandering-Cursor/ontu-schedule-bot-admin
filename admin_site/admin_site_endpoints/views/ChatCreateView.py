@@ -13,7 +13,7 @@ class ChatCreateView(BaseAPIView):
             topic_id=request_data["thread_id"],
             defaults={
                 "chat_info": request_data["chat_info"],
-                "is_forum": request_data["is_forum"],
+                "is_forum": request_data["is_forum"] or False,
             },
         )
         if created:
