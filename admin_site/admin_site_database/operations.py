@@ -52,9 +52,12 @@ def fetch_groups(
 
 @do_until_success
 def get_schedule_by_group_id(group_id: int):
-    schedule = global_parser.get_schedule(group_id=group_id)
     logging.warning(
         f"Getting schedule with {group_id=}; {global_parser.sender.cookies.value=}"
+    )
+    schedule = global_parser.get_schedule(group_id=group_id)
+    logging.warning(
+        f"Post - got schedule {group_id=}; {global_parser.sender.cookies.value=}"
     )
     result = {"days": {}}
 
@@ -97,7 +100,7 @@ def get_schedule_by_names(faculty_name: str, group_name: str):
         )
 
     logging.warning(
-        f"Got group: {faculty_id=}, {group_id=}; {global_parser.sender.cookies.value=}"
+        f"Got group: {faculty_id=} - {faculty=}, {group_id=} - {group=}; {global_parser.sender.cookies.value=}"
     )
 
     return get_schedule_by_group_id(group_id=group_id)
