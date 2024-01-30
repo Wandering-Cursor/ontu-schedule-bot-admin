@@ -62,7 +62,7 @@ def get_schedule_by_group_id(group_id: int):
     result = {"days": {}}
 
     for day_name, pairs in schedule.items():
-        logging.info(f"Day: {day_name=} - {pairs=}")
+        logging.warning(f"Day: {day_name=} - {pairs=}")
         pairs_per_day = []
         for pair in pairs:
             converted_lessons = []
