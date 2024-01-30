@@ -54,7 +54,7 @@ def fetch_groups(
 def get_schedule_by_group_id(group_id: int):
     schedule = global_parser.get_schedule(group_id=group_id)
     logging.warning(
-        f"Getting schedule with {global_parser=} {group_id=}; {global_parser.sender.cookies.value=}"
+        f"Getting schedule with {global_parser} {group_id=}; {global_parser.sender.cookies.value=}"
     )
     result = {"days": {}}
 
