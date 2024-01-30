@@ -6,14 +6,18 @@ from typing import TYPE_CHECKING
 
 from admin_site_database.model_files import Faculty as model_Faculty
 from ontu_parser.classes import Parser
-from ontu_parser.classes.dataclasses import (BaseStudentsLesson, Faculty,
-                                             Group, TeachersLesson)
+from ontu_parser.classes.dataclasses import (
+    BaseStudentsLesson,
+    Faculty,
+    Group,
+    TeachersLesson,
+)
 
 from .decorators import do_until_success
 
 if TYPE_CHECKING:
-    from ontu_parser.classes.dataclasses import (Teacher, TeachersLesson,
-                                                 TeachersPair)
+    from ontu_parser.classes.dataclasses import Teacher, TeachersLesson, TeachersPair
+import logging
 
 
 global_parser = Parser()
@@ -27,7 +31,9 @@ def fetch_faculties() -> list[Faculty]:
 
 
 @do_until_success
-def fetch_groups(faculty_entities: list[model_Faculty]) -> dict[model_Faculty, list[Group]]:
+def fetch_groups(
+    faculty_entities: list[model_Faculty],
+) -> dict[model_Faculty, list[Group]]:
     faculties: list[Faculty] = global_parser.get_faculties()
     groups_per_faculty: dict[str, list[Group]] = {}
     for faculty in faculties:
@@ -47,6 +53,9 @@ def fetch_groups(faculty_entities: list[model_Faculty]) -> dict[model_Faculty, l
 @do_until_success
 def get_schedule_by_group_id(group_id: int):
     schedule = global_parser.get_schedule(group_id=group_id)
+    logging.warning(
+        f"Getting schedule with {global_parser=} {group_id=}; {global_parser.sender.cookies.value=}"
+    )
     result = {"days": {}}
 
     for day_name, pairs in schedule.items():
@@ -83,7 +92,13 @@ def get_schedule_by_names(faculty_name: str, group_name: str):
             group_id = group.get_group_id()
             break
     else:
-        raise ValueError("Could not get group by name", faculty_name, group_name, groups)
+        raise ValueError(
+            "Could not get group by name", faculty_name, group_name, groups
+        )
+
+    logging.warning(
+        f"Got group: {faculty_id=}, {group_id=}; {global_parser.sender.cookies.value=}"
+    )
 
     return get_schedule_by_group_id(group_id=group_id)
 
