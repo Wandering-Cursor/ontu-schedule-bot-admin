@@ -2,8 +2,7 @@ import logging
 
 from admin_site_database import model_files, operations
 from admin_site_endpoints.views.ScheduleGetView import ScheduleGetView
-from admin_site_endpoints.views.TeachersScheduleView import \
-    TeachersScheduleView
+from admin_site_endpoints.views.TeachersScheduleView import TeachersScheduleView
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -64,8 +63,11 @@ class BatchScheduleView(APIView):
                         "schedule": TeachersScheduleView.get_schedule(
                             teacher=subscription.teacher
                         ),
-                        "chat_ids": [
-                            chat.telegram_id
+                        "chat_info": [
+                            {
+                                "chat_id": chat.telegram_id,
+                                "topic_id": chat.topic_id,
+                            }
                             for chat in subscription.related_telegram_chats
                         ],
                     }
