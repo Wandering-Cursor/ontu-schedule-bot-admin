@@ -24,6 +24,10 @@ class Teacher(BaseModel):
         on_delete=models.CASCADE,
         related_name="teachers",
     )
+    departments: "models.ManyToManyField[Department]" = models.ManyToManyField(
+        "Department",
+        related_name="teachers_m2m",
+    )
 
     def as_json(self) -> dict[str, str]:
         return {
@@ -31,6 +35,9 @@ class Teacher(BaseModel):
             "short_name": self.short_name,
             "full_name": self.full_name,
             "department": self.department.as_json(),
+            "departments": [
+                department.as_json() for department in self.departments.all()
+            ],
         }
 
     def __str__(self) -> str:
