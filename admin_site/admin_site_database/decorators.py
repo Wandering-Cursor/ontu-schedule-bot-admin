@@ -12,14 +12,22 @@ def do_until_success(__func: F) -> F:
 
 
 @overload
-def do_until_success(*, number_of_tries: int = 3) -> Callable[[F], F]:
+def do_until_success(
+    *,
+    number_of_tries: int = 3,
+) -> Callable[[F], F]:
     ...
 
 
-def do_until_success(work_func: F | None = None, *, number_of_tries: int = 3) -> F | Callable[[F], F]:
+def do_until_success(
+    work_func: F | None = None,
+    *,
+    number_of_tries: int = 3,
+) -> F | Callable[[F], F]:
     def decorator(work_func: F) -> F:
         @wraps(work_func)
         def wrapper(*args: tuple[Any], **kwargs: dict[str, Any]) -> Any:
+            last_exception = None
             delay = 1
             tries = number_of_tries
             while tries:
@@ -29,10 +37,13 @@ def do_until_success(work_func: F | None = None, *, number_of_tries: int = 3) ->
                     result = work_func(*args, **kwargs)
                 except Exception as e:
                     from .operations import global_parser
-                    global_parser.sender.notbot._value = None
+
+                    last_exception = e
                     global_parser.sender.cookies._value = None
 
-                    logging.warning(f"During exectution of {work_func.__name__} raised exeption {e}")
+                    logging.warning(
+                        f"During exectution of {work_func.__name__} raised exeption {e}"
+                    )
                 if result:
                     return result
                 if tries:
@@ -40,7 +51,8 @@ def do_until_success(work_func: F | None = None, *, number_of_tries: int = 3) ->
 
             raise Exception(
                 f"Tried to wait for the response from `{work_func.__name__}`, "
-                f"but gived up after {number_of_tries} tries."
+                f"but gived up after {number_of_tries} tries.",
+                last_exception,
             )
 
         return cast(F, wrapper)
