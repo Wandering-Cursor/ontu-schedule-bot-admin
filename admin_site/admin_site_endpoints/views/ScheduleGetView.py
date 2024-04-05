@@ -6,6 +6,7 @@ from django.utils import timezone
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.exceptions import APIException
 
 
 class ScheduleGetView(APIView):
@@ -57,7 +58,7 @@ class ScheduleGetView(APIView):
         request_data: dict[str, str] = request.data
         group_name = request_data["group"]
         faculty_name = request_data["faculty"]
-        logging.error(f"Input: {request_data}")
+        logging.info(f"Input: {request_data}")
 
         group: model_files.Group | None = model_files.Group.objects.filter(
             name=group_name, faculty__name=faculty_name
@@ -65,5 +66,12 @@ class ScheduleGetView(APIView):
         if not group:
             return Response(status=404)
 
-        logging.error(f"Group: {group}")
-        return Response(data=self.get_schedule(group=group))
+        logging.info(f"Group: {group}")
+        try:
+            schedule = self.get_schedule(group=group)
+        except Exception as e:
+            logging.exception(f"Exception: {e}")
+            raise APIException(
+                detail=f"Failed to get schedule from ONTU Parser. Error: {e.args}"
+            )
+        return Response(data=schedule)

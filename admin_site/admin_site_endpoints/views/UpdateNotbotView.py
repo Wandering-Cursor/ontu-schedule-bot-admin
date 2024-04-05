@@ -7,19 +7,13 @@ from rest_framework.views import APIView
 class UpdateNotbotView(APIView):
     def get(self, _: Request):
         try:
-            operations.global_parser.sender.notbot._value = None
-            operations.global_parser.sender.cookies._value = None
-            operations.teachers_parser.sender.notbot._value = None
-            operations.teachers_parser.sender.cookies._value = None
-            notbot_value = operations.global_parser.sender.notbot.get_notbot()
-            notbot_value_teachers = (
-                operations.teachers_parser.sender.notbot.get_notbot()
-            )
-            if notbot_value and notbot_value_teachers:
+            global_value = operations.global_parser.sender.cookies.get_cookie()
+            teachers_value = operations.teachers_parser.sender.cookies.get_cookie()
+            if global_value and teachers_value:
                 return Response(status=200)
-            raise ValueError("Expecting notbot_value to be set")
+            raise ValueError("Expecting cookies to be set")
         except (ValueError, ConnectionError, Exception) as exception:
             return Response(
-                data=f"Notbot not set to desired value. {exception}",
+                data=f"Cookies not set to desired value. {exception}",
                 status=500,
             )
