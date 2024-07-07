@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from admin_site_database.model_files import Faculty as model_Faculty
 from ontu_parser.classes import Parser
 from ontu_parser.classes.dataclasses import (
     BaseStudentsLesson,
@@ -13,12 +12,14 @@ from ontu_parser.classes.dataclasses import (
     TeachersLesson,
 )
 
+from admin_site_database.model_files import Faculty as model_Faculty
+
 from .decorators import do_until_success
 
 if TYPE_CHECKING:
     from ontu_parser.classes.dataclasses import Teacher, TeachersLesson, TeachersPair
-import logging
 
+import logging
 
 global_parser = Parser()
 teachers_parser = Parser(kwargs={"for_teachers": True})

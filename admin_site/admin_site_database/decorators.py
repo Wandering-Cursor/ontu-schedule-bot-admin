@@ -7,16 +7,14 @@ F = TypeVar("F", bound=Callable[..., Any])
 
 
 @overload
-def do_until_success(__func: F) -> F:
-    ...
+def do_until_success(__func: F) -> F: ...
 
 
 @overload
 def do_until_success(
     *,
     number_of_tries: int = 3,
-) -> Callable[[F], F]:
-    ...
+) -> Callable[[F], F]: ...
 
 
 def do_until_success(
@@ -32,7 +30,7 @@ def do_until_success(
             tries = number_of_tries
             while tries:
                 tries -= 1
-                result = None
+                result = object
                 try:
                     result = work_func(*args, **kwargs)
                 except Exception as e:
@@ -44,7 +42,7 @@ def do_until_success(
                     logging.warning(
                         f"During exectution of {work_func.__name__} raised exeption {e}"
                     )
-                if result:
+                if result != object:
                     return result
                 if tries:
                     sleep(delay)

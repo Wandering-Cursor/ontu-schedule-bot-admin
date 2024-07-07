@@ -1,5 +1,6 @@
-from admin_site_database.model_files import TeacherScheduleCache
 from django.contrib import admin
+
+from admin_site_database.model_files import TeacherScheduleCache
 
 from .base import BaseAdmin
 

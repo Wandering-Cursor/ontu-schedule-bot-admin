@@ -4,24 +4,26 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('admin_site_database', '0001_initial'),
+        ("admin_site_database", "0001_initial"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='MessageCampaign',
+            name="MessageCampaign",
             fields=[
-                ('id', models.UUIDField(primary_key=True, serialize=False)),
-                ('created', models.DateTimeField()),
-                ('updated', models.DateTimeField()),
-                ('bot_key', models.CharField(max_length=128)),
-                ('message', models.TextField(max_length=4096)),
-                ('to_chats', models.ManyToManyField(to='admin_site_database.telegramchat')),
+                ("id", models.UUIDField(primary_key=True, serialize=False)),
+                ("created", models.DateTimeField()),
+                ("updated", models.DateTimeField()),
+                ("bot_key", models.CharField(max_length=128)),
+                ("message", models.TextField(max_length=4096)),
+                (
+                    "to_chats",
+                    models.ManyToManyField(to="admin_site_database.telegramchat"),
+                ),
             ],
             options={
-                'abstract': False,
+                "abstract": False,
             },
         ),
     ]

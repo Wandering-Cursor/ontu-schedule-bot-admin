@@ -1,5 +1,6 @@
-from admin_site_database.model_files import Teacher
 from django.contrib import admin
+
+from admin_site_database.model_files import Teacher
 
 from .base import BaseAdmin
 

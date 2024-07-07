@@ -5,53 +5,66 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('admin_site_database', '0002_messagecampaign'),
+        ("admin_site_database", "0002_messagecampaign"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Department',
+            name="Department",
             fields=[
-                ('id', models.UUIDField(primary_key=True, serialize=False)),
-                ('created', models.DateTimeField()),
-                ('updated', models.DateTimeField()),
-                ('external_id', models.CharField(max_length=255, unique=True)),
-                ('short_name', models.TextField()),
-                ('full_name', models.TextField()),
+                ("id", models.UUIDField(primary_key=True, serialize=False)),
+                ("created", models.DateTimeField()),
+                ("updated", models.DateTimeField()),
+                ("external_id", models.CharField(max_length=255, unique=True)),
+                ("short_name", models.TextField()),
+                ("full_name", models.TextField()),
             ],
             options={
-                'abstract': False,
+                "abstract": False,
             },
         ),
         migrations.CreateModel(
-            name='Teacher',
+            name="Teacher",
             fields=[
-                ('id', models.UUIDField(primary_key=True, serialize=False)),
-                ('created', models.DateTimeField()),
-                ('updated', models.DateTimeField()),
-                ('external_id', models.CharField(max_length=255, unique=True)),
-                ('short_name', models.CharField(max_length=255)),
-                ('full_name', models.TextField()),
-                ('department', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='teachers', to='admin_site_database.department')),
+                ("id", models.UUIDField(primary_key=True, serialize=False)),
+                ("created", models.DateTimeField()),
+                ("updated", models.DateTimeField()),
+                ("external_id", models.CharField(max_length=255, unique=True)),
+                ("short_name", models.CharField(max_length=255)),
+                ("full_name", models.TextField()),
+                (
+                    "department",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="teachers",
+                        to="admin_site_database.department",
+                    ),
+                ),
             ],
             options={
-                'abstract': False,
+                "abstract": False,
             },
         ),
         migrations.CreateModel(
-            name='TeacherScheduleCache',
+            name="TeacherScheduleCache",
             fields=[
-                ('id', models.UUIDField(primary_key=True, serialize=False)),
-                ('created', models.DateTimeField()),
-                ('updated', models.DateTimeField()),
-                ('expires_on', models.DateTimeField()),
-                ('schedule', models.JSONField()),
-                ('teacher', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='schedule_cache', to='admin_site_database.teacher')),
+                ("id", models.UUIDField(primary_key=True, serialize=False)),
+                ("created", models.DateTimeField()),
+                ("updated", models.DateTimeField()),
+                ("expires_on", models.DateTimeField()),
+                ("schedule", models.JSONField()),
+                (
+                    "teacher",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="schedule_cache",
+                        to="admin_site_database.teacher",
+                    ),
+                ),
             ],
             options={
-                'abstract': False,
+                "abstract": False,
             },
         ),
     ]

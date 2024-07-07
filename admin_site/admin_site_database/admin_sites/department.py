@@ -1,5 +1,6 @@
-from admin_site_database.model_files import Department
 from django.contrib import admin
+
+from admin_site_database.model_files import Department
 
 from .base import BaseAdmin
 

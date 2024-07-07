@@ -1,4 +1,5 @@
 """Contains all the manager (and potentially other DB related stuff)"""
+
 from .faculty_manager import FacultyManager
 from .group_manger import GroupManager
 from .settings_manager import SettingsManager

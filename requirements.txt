@@ -4,3 +4,5 @@ rozklad-ontu-parser-MakisuKurisu>=0.1.0.0
 python-decouple
 djangorestframework
 djangoql
+uvicorn[standard]==0.30.1
+drf-spectacular

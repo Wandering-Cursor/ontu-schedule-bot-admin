@@ -1,10 +1,12 @@
 """
 Telegram Chat model
 """
+
+from django.db import models
+
 from admin_site_database import db as admin_db
 from admin_site_database.model_files.base import BaseModel
 from admin_site_database.model_files.subscription import Subscription
-from django.db import models
 
 
 class TelegramChat(BaseModel):

@@ -1,10 +1,11 @@
 import logging
 
-from admin_site_database import model_files, operations
+from ontu_parser.classes.dataclasses import Teacher
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from ontu_parser.classes.dataclasses import Teacher
+
+from admin_site_database import model_files, operations
 
 
 class TeachersDepartmentView(APIView):

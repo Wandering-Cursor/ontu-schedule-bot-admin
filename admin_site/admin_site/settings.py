@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     "admin_site_endpoints",
     "rest_framework",
     "djangoql",
+    "drf_spectacular",
 ]
 
 MIDDLEWARE = [
@@ -141,7 +142,12 @@ LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
     "handlers": {
-        "file": {"level": "DEBUG", "class": "logging.FileHandler", "filename": "debug.log", "formatter": "verbose"},
+        "file": {
+            "level": "DEBUG",
+            "class": "logging.FileHandler",
+            "filename": "debug.log",
+            "formatter": "verbose",
+        },
         "console": {
             "level": "WARNING",
             "class": "logging.StreamHandler",
@@ -167,5 +173,15 @@ CSRF_TRUSTED_ORIGINS = ["https://*.github.dev"]
 
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 8196
 
-STATIC_ROOT = "/root/ONTU/admin/admin_site/static/"
+STATIC_ROOT = "static/"
 STATIC_URL = "static/"
+
+REST_FRAMEWORK = {
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+}
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "ONTU Schedule Admin",
+    "SERVE_INCLUDE_SCHEMA": False,
+    # OTHER SETTINGS
+}

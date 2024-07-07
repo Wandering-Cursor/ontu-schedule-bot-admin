@@ -1,4 +1,5 @@
 """Models for endpoints app"""
+
 from django.db import models
 
 
