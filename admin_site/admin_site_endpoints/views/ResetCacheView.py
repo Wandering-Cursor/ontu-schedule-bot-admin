@@ -1,7 +1,8 @@
-from admin_site_endpoints import operations as endpoint_operations
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
+from admin_site_endpoints import operations as endpoint_operations
 
 
 class ResetCacheView(APIView):

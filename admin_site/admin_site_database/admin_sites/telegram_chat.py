@@ -1,9 +1,11 @@
 """
 Admin Site for Subscription
 """
+
+from django.contrib import admin
+
 from admin_site_database.admin_sites.base import BaseAdmin
 from admin_site_database.model_files import TelegramChat
-from django.contrib import admin
 
 
 @admin.register(TelegramChat)

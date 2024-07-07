@@ -4,15 +4,14 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('admin_site_database', '0005_telegramchat_if_forum_telegramchat_topic_id'),
+        ("admin_site_database", "0005_telegramchat_if_forum_telegramchat_topic_id"),
     ]
 
     operations = [
         migrations.RenameField(
-            model_name='telegramchat',
-            old_name='if_forum',
-            new_name='is_forum',
+            model_name="telegramchat",
+            old_name="if_forum",
+            new_name="is_forum",
         ),
     ]

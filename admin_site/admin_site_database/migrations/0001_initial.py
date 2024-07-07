@@ -5,77 +5,98 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='Faculty',
+            name="Faculty",
             fields=[
-                ('id', models.UUIDField(primary_key=True, serialize=False)),
-                ('created', models.DateTimeField()),
-                ('updated', models.DateTimeField()),
-                ('name', models.TextField()),
+                ("id", models.UUIDField(primary_key=True, serialize=False)),
+                ("created", models.DateTimeField()),
+                ("updated", models.DateTimeField()),
+                ("name", models.TextField()),
             ],
             options={
-                'abstract': False,
+                "abstract": False,
             },
         ),
         migrations.CreateModel(
-            name='Group',
+            name="Group",
             fields=[
-                ('id', models.UUIDField(primary_key=True, serialize=False)),
-                ('created', models.DateTimeField()),
-                ('updated', models.DateTimeField()),
-                ('name', models.TextField()),
-                ('faculty', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='groups', to='admin_site_database.faculty')),
+                ("id", models.UUIDField(primary_key=True, serialize=False)),
+                ("created", models.DateTimeField()),
+                ("updated", models.DateTimeField()),
+                ("name", models.TextField()),
+                (
+                    "faculty",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="groups",
+                        to="admin_site_database.faculty",
+                    ),
+                ),
             ],
             options={
-                'abstract': False,
+                "abstract": False,
             },
         ),
         migrations.CreateModel(
-            name='Settings',
+            name="Settings",
             fields=[
-                ('id', models.UUIDField(primary_key=True, serialize=False)),
-                ('created', models.DateTimeField()),
-                ('updated', models.DateTimeField()),
-                ('name', models.TextField()),
-                ('value', models.TextField()),
+                ("id", models.UUIDField(primary_key=True, serialize=False)),
+                ("created", models.DateTimeField()),
+                ("updated", models.DateTimeField()),
+                ("name", models.TextField()),
+                ("value", models.TextField()),
             ],
             options={
-                'abstract': False,
+                "abstract": False,
             },
         ),
         migrations.CreateModel(
-            name='Subscription',
+            name="Subscription",
             fields=[
-                ('id', models.UUIDField(primary_key=True, serialize=False)),
-                ('created', models.DateTimeField()),
-                ('updated', models.DateTimeField()),
-                ('is_active', models.BooleanField()),
-                ('group', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='subscriptions', to='admin_site_database.group')),
+                ("id", models.UUIDField(primary_key=True, serialize=False)),
+                ("created", models.DateTimeField()),
+                ("updated", models.DateTimeField()),
+                ("is_active", models.BooleanField()),
+                (
+                    "group",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="subscriptions",
+                        to="admin_site_database.group",
+                    ),
+                ),
             ],
             options={
-                'abstract': False,
+                "abstract": False,
             },
         ),
         migrations.CreateModel(
-            name='TelegramChat',
+            name="TelegramChat",
             fields=[
-                ('id', models.UUIDField(primary_key=True, serialize=False)),
-                ('created', models.DateTimeField()),
-                ('updated', models.DateTimeField()),
-                ('telegram_id', models.BigIntegerField()),
-                ('name', models.TextField()),
-                ('chat_info', models.JSONField(blank=True, null=True)),
-                ('subscription', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='telegram_chats', to='admin_site_database.subscription')),
+                ("id", models.UUIDField(primary_key=True, serialize=False)),
+                ("created", models.DateTimeField()),
+                ("updated", models.DateTimeField()),
+                ("telegram_id", models.BigIntegerField()),
+                ("name", models.TextField()),
+                ("chat_info", models.JSONField(blank=True, null=True)),
+                (
+                    "subscription",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="telegram_chats",
+                        to="admin_site_database.subscription",
+                    ),
+                ),
             ],
             options={
-                'abstract': False,
+                "abstract": False,
             },
         ),
     ]

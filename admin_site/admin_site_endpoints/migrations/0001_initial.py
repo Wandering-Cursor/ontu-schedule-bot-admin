@@ -4,21 +4,27 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='ScheduleCache',
+            name="ScheduleCache",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('faculty', models.CharField(max_length=100)),
-                ('group', models.CharField(max_length=100)),
-                ('schedule', models.JSONField()),
-                ('at_time', models.DateTimeField(auto_now=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("faculty", models.CharField(max_length=100)),
+                ("group", models.CharField(max_length=100)),
+                ("schedule", models.JSONField()),
+                ("at_time", models.DateTimeField(auto_now=True)),
             ],
         ),
     ]

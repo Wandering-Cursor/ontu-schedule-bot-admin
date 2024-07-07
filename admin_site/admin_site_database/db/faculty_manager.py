@@ -1,4 +1,5 @@
 """Faculty manager"""
+
 from .base import BaseManager
 
 

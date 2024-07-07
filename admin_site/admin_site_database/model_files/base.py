@@ -1,6 +1,7 @@
 """
 Base Model
 """
+
 import uuid
 
 from django.db import models
@@ -9,6 +10,7 @@ from django.utils import timezone
 
 class BaseModel(models.Model):
     """Base model for all the others. Contains some common params"""
+
     id = models.UUIDField(primary_key=True)
     created = models.DateTimeField()
     updated = models.DateTimeField()
@@ -31,4 +33,5 @@ class BaseModel(models.Model):
         """
         This is an abstract class, since it's the base class
         """
+
         abstract = True

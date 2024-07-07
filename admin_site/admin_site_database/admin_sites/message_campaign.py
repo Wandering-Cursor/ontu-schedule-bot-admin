@@ -2,8 +2,9 @@
 Message Campaign site
 """
 
-from admin_site_database.model_files import MessageCampaign
 from django.contrib import admin
+
+from admin_site_database.model_files import MessageCampaign
 
 from .base import BaseAdmin
 
@@ -15,9 +16,9 @@ class MessageCampaignAdmin(BaseAdmin):
     """
 
     list_display = BaseAdmin.list_display + [
-        'get_to_chats',
-        'safe_bot_key',
-        'cropped_message',
+        "get_to_chats",
+        "safe_bot_key",
+        "cropped_message",
     ]
 
     readonly_fields = BaseAdmin.readonly_fields

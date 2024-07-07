@@ -1,11 +1,13 @@
 """
 Admin Site for Faculty and actions.
 """
+
+from django.contrib import admin
+from django.db import transaction
+
 from admin_site_database import operations
 from admin_site_database.admin_sites.base import BaseAdmin
 from admin_site_database.model_files import Faculty, Group
-from django.contrib import admin
-from django.db import transaction
 
 
 @admin.action(description="Update list of Faculties")
@@ -40,8 +42,7 @@ def get_groups(_, __, queryset):
             group_name = group.get_group_name()
             print(f"Fetching Group: {group_name}")
             new_group, created = Group.objects.get_or_create(
-                faculty_id=faculty.id,
-                name=group_name
+                faculty_id=faculty.id, name=group_name
             )
             new_group: Group
             if created:
@@ -55,11 +56,8 @@ class FacultyAdmin(BaseAdmin):
 
     Using Actions you can fetch Faculties and Groups
     """
-    list_display = BaseAdmin.list_display + [
-        'name'
-    ]
-    fields = [
-        'name'
-    ]
+
+    list_display = BaseAdmin.list_display + ["name"]
+    fields = ["name"]
 
     actions = [get_faculties, get_groups]

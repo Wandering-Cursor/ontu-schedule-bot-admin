@@ -1,9 +1,10 @@
 import logging
 
-from admin_site_database import model_files, operations
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
+from admin_site_database import model_files, operations
 
 
 class TeachersDepartmentsView(APIView):

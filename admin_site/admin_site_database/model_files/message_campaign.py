@@ -1,10 +1,12 @@
 """
 A message campaign (mass-sending of messages)
 """
-from admin_site_database.model_files.base import BaseModel
-from admin_site_database.model_files.telegram_chat import TelegramChat
+
 from django.db import models
 from django.utils.safestring import mark_safe
+
+from admin_site_database.model_files.base import BaseModel
+from admin_site_database.model_files.telegram_chat import TelegramChat
 
 
 class MessageCampaign(BaseModel):

@@ -1,4 +1,5 @@
 """Module containing base manager"""
+
 from django.db.models import Manager
 
 

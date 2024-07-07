@@ -4,20 +4,19 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('admin_site_database', '0004_subscription_teacher_alter_subscription_group'),
+        ("admin_site_database", "0004_subscription_teacher_alter_subscription_group"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='telegramchat',
-            name='if_forum',
+            model_name="telegramchat",
+            name="if_forum",
             field=models.BooleanField(default=False),
         ),
         migrations.AddField(
-            model_name='telegramchat',
-            name='topic_id',
+            model_name="telegramchat",
+            name="topic_id",
             field=models.IntegerField(blank=True, null=True),
         ),
     ]
