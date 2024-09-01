@@ -26,3 +26,10 @@ class Group(BaseModel):
 
     def __str__(self) -> str:
         return f"Group: {self.name} - {self.faculty}"
+
+    class Meta:
+        ordering = [
+            "faculty",
+            "name",
+            "-created",
+        ]

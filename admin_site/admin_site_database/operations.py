@@ -34,19 +34,25 @@ def fetch_faculties() -> list[Faculty]:
 @do_until_success
 def fetch_groups(
     faculty_entities: list[model_Faculty],
+    *,
+    fetch_extramural: bool = True,
 ) -> dict[model_Faculty, list[Group]]:
     faculties: list[Faculty] = global_parser.get_faculties()
     groups_per_faculty: dict[str, list[Group]] = {}
     for faculty in faculties:
-        faculty_id = None
         for entity in faculty_entities:
             if faculty.get_faculty_name() == entity.name:
-                faculty_id = faculty.get_faculty_id()
                 break
         else:
             continue
 
-        groups = global_parser.get_groups(faculty_id=faculty_id)
+        groups = global_parser.get_groups(faculty=faculty)
+
+        if fetch_extramural:
+            extramural = global_parser.get_extramural(faculty.get_faculty_id())
+            if extramural:
+                groups += global_parser.get_groups(faculty=extramural)
+
         groups_per_faculty[entity] = groups
     return groups_per_faculty
 
