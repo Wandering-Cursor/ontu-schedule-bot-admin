@@ -86,6 +86,11 @@ def get_schedule_by_group_id(group_id: int):
 
 
 def get_schedule_by_names(faculty_name: str, group_name: str):
+    def __get_group_id(groups: list["Group"]) -> str | int:
+        for group in groups:
+            if group.get_group_name() == group_name:
+                return group.get_group_id()
+
     faculty_id: int | None = None
     group_id: int | None = None
 
@@ -98,18 +103,20 @@ def get_schedule_by_names(faculty_name: str, group_name: str):
         raise ValueError("Could not get faculty by name", faculty_name, faculties)
 
     groups = global_parser.get_groups(faculty_id=faculty_id)
-    for group in groups:
-        if group.get_group_name() == group_name:
-            group_id = group.get_group_id()
-            break
-    else:
+    group_id = __get_group_id(groups=groups)
+    if not group_id:
+        extramural_faculty = global_parser.get_extramural(
+            faculty_id=faculty.get_faculty_id()
+        )
+        if extramural_faculty:
+            group_id = __get_group_id(
+                groups=global_parser.get_groups(faculty=extramural_faculty)
+            )
+
+    if not group_id:
         raise ValueError(
             "Could not get group by name", faculty_name, group_name, groups
         )
-
-    logging.warning(
-        f"Got group: {faculty_id=} - {faculty=}, {group_id=} - {group=}; {global_parser.sender.cookies.value=}"
-    )
 
     return get_schedule_by_group_id(group_id=group_id)
 
