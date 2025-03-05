@@ -6,18 +6,23 @@ from typing import TYPE_CHECKING
 
 from ontu_parser.classes import Parser
 from ontu_parser.classes.dataclasses import (
-    BaseStudentsLesson,
-    Faculty,
-    Group,
     TeachersLesson,
 )
-
-from admin_site_database.model_files import Faculty as model_Faculty
 
 from .decorators import do_until_success
 
 if TYPE_CHECKING:
-    from ontu_parser.classes.dataclasses import Teacher, TeachersLesson, TeachersPair
+    from ontu_parser.classes.dataclasses import (
+        BaseStudentsLesson,
+        Department,
+        Faculty,
+        Group,
+        Teacher,
+        TeachersLesson,
+        TeachersPair,
+    )
+
+    from admin_site_database.model_files import Faculty as model_Faculty
 
 import logging
 
@@ -27,8 +32,7 @@ teachers_parser = Parser(kwargs={"for_teachers": True})
 
 @do_until_success
 def fetch_faculties() -> list[Faculty]:
-    faculties = global_parser.get_faculties()
-    return faculties
+    return global_parser.get_faculties()
 
 
 @do_until_success
@@ -58,14 +62,9 @@ def fetch_groups(
 
 
 @do_until_success
-def get_schedule_by_group_id(group_id: int):
-    logging.warning(
-        f"Getting schedule with {group_id=}; {global_parser.sender.cookies.value=}"
-    )
+def get_schedule_by_group_id(group_id: int) -> dict[str, list[dict]]:
     schedule = global_parser.get_schedule(group_id=group_id)
-    logging.warning(
-        f"Post - got schedule {group_id=}; {global_parser.sender.cookies.value=}"
-    )
+
     result = {"days": {}}
 
     for day_name, pairs in schedule.items():
@@ -85,11 +84,12 @@ def get_schedule_by_group_id(group_id: int):
     return result
 
 
-def get_schedule_by_names(faculty_name: str, group_name: str):
-    def __get_group_id(groups: list["Group"]) -> str | int:
+def get_schedule_by_names(faculty_name: str, group_name: str) -> dict[str, list[dict]]:
+    def __get_group_id(groups: list[Group]) -> str | int:
         for group in groups:
             if group.get_group_name() == group_name:
                 return group.get_group_id()
+        raise ValueError("Could not get group by name", faculty_name, group_name, groups)
 
     faculty_id: int | None = None
     group_id: int | None = None
@@ -105,36 +105,29 @@ def get_schedule_by_names(faculty_name: str, group_name: str):
     groups = global_parser.get_groups(faculty_id=faculty_id)
     group_id = __get_group_id(groups=groups)
     if not group_id:
-        extramural_faculty = global_parser.get_extramural(
-            faculty_id=faculty.get_faculty_id()
-        )
+        extramural_faculty = global_parser.get_extramural(faculty_id=faculty.get_faculty_id())
         if extramural_faculty:
-            group_id = __get_group_id(
-                groups=global_parser.get_groups(faculty=extramural_faculty)
-            )
+            group_id = __get_group_id(groups=global_parser.get_groups(faculty=extramural_faculty))
 
     if not group_id:
-        raise ValueError(
-            "Could not get group by name", faculty_name, group_name, groups
-        )
+        raise ValueError("Could not get group by name", faculty_name, group_name, groups)
 
     return get_schedule_by_group_id(group_id=group_id)
 
 
-def get_departments():
+def get_departments() -> list[Department]:
     return teachers_parser.get_departments()
 
 
-def get_teachers_by_department(department_id: str) -> "list[Teacher]":
+def get_teachers_by_department(department_id: str) -> list[Teacher]:
     return teachers_parser.get_teachers_by_department(department_id=department_id)
 
 
-def fetch_teacher_schedule(teacher_id: str):
+def fetch_teacher_schedule(teacher_id: str) -> dict[str, list[TeachersPair]]:
     schedule = teachers_parser.get_schedule(teacher_id=teacher_id)
     result = {"days": {}}
 
     for day_name, pairs in schedule.items():
-        pairs: "list[TeachersPair]"
         pairs_per_day = []
         for pair in pairs:
             pairs_per_day.append(
@@ -148,7 +141,7 @@ def fetch_teacher_schedule(teacher_id: str):
     return result
 
 
-def _convert_lesson(lesson: BaseStudentsLesson):
+def _convert_lesson(lesson: BaseStudentsLesson) -> dict:
     return {
         "date": lesson.lesson_date,
         "teacher": {
@@ -164,7 +157,7 @@ def _convert_lesson(lesson: BaseStudentsLesson):
     }
 
 
-def _convert_teachers_lesson(lesson: TeachersLesson | None):
+def _convert_teachers_lesson(lesson: TeachersLesson | None) -> dict:
     if not lesson:
         return {}
 

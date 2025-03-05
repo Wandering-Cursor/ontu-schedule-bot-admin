@@ -20,11 +20,12 @@ from django.views.static import serve
 
 from . import settings, views
 
-print(settings.STATIC_URL)
-print(settings.STATIC_ROOT)
-
 static_pattern = [
-    re_path(r"^static/(?P<path>.*)$", serve, {"document_root": settings.STATIC_ROOT})
+    re_path(
+        r"^static/(?P<path>.*)$",
+        serve,
+        {"document_root": settings.STATIC_ROOT},
+    )
 ]
 
 urlpatterns = [

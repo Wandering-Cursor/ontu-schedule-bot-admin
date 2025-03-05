@@ -1,0 +1,97 @@
+[project]
+name = "ontu-schedule-bot-admin"
+version = "1.0.0"
+description = "Default template for PDM package"
+authors = [
+    {name = "Pavlo Pohorieltsev", email = "49622129+makisukurisu@users.noreply.github.com"},
+]
+dependencies = [
+    "Django>=4.2.19, <5",
+    "djangorestframework",
+    "djangoql",
+    "drf-spectacular",
+    "requests>=2.32.3,<3.0",
+    "rozklad-ontu-parser-MakisuKurisu>=0.1.2.0,<0.2",
+    "python-decouple>=3.8",
+    "uvicorn[standard]>=0.34.0,<0.35",
+]
+requires-python = ">=3.11"
+readme = "README.md"
+license = {text = "MIT"}
+
+
+[tool.pdm]
+distribution = false
+
+[dependency-groups]
+dev = [
+    "ruff>=0.9.9",
+]
+
+[tool.pdm.scripts]
+_migrate = "python admin_site/manage.py migrate"
+_collectstatic = "python admin_site/manage.py collectstatic --noinput"
+
+_runserver.cmd = "uvicorn admin_site.asgi:application --host 0.0.0.0 --port 8000"
+_runserver.working_dir="admin_site"
+
+start = {"composite" = ["_migrate", "_collectstatic", "_runserver"]}
+
+manage = "python admin_site/manage.py"
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+extend-select = [
+  "UP",
+  "E",
+  "W",
+  "I",
+  "C90",
+  "N",
+  "ANN",
+  "ASYNC",
+  "BLE",
+  "FBT",
+  "B",
+  "A",
+  "C4",
+  "DTZ",
+  "T10",
+  "FA",
+  "ISC",
+  "ICN",
+  "INP",
+  "PIE",
+  "T20",
+  "PYI",
+  "Q",
+  "RET",
+  "SLF",
+  "SIM",
+  "TID",
+  "TCH",
+  "ARG",
+  "TD",
+  "FIX",
+  "ERA",
+  "PL",
+  "RUF",
+]
+ignore = [
+  "ISC001",
+  "N999",
+  "ERA001",
+  "RUF012",
+  "ANN101",
+  "ANN102",
+  "FBT001",
+  "FBT002",
+]
+
+[tool.ruff.format]
+quote-style = "double"
+docstring-code-format = true
+

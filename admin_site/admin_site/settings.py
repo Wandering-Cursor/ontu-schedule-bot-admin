@@ -22,7 +22,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-tmp = config("SECRET_KEY")
+tmp = config("SECRET_KEY", default=None)
 if not tmp:
     tmp = input("Enter Django Secret Key: ")
     with open(".env", "a+", encoding="UTF-8") as f:

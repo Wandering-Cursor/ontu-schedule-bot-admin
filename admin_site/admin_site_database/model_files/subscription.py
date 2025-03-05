@@ -13,6 +13,7 @@ from admin_site_database.model_files.base import BaseModel
 from admin_site_database.model_files.group import Group
 
 if TYPE_CHECKING:
+    from django.db.models.manager import RelatedManager
     from admin_site_database.model_files.teacher import Teacher
     from admin_site_database.model_files.telegram_chat import TelegramChat
 
@@ -44,7 +45,7 @@ class Subscription(BaseModel):
         }
 
     @property
-    def related_telegram_chats(self) -> "list[TelegramChat]":
+    def related_telegram_chats(self) -> list[TelegramChat]:
         """Returns related telegram chats"""
         telegram_chats = getattr(self, "telegram_chats", None)
         if not hasattr(telegram_chats, "all"):
@@ -57,4 +58,5 @@ class Subscription(BaseModel):
     def __str__(self) -> str:
         return f"To: {self.group} | {self.teacher}"
 
-    objects = admin_db.SubscriptionManager
+    objects: admin_db.SubscriptionManager = admin_db.SubscriptionManager()
+    telegram_chats: "RelatedManager[TelegramChat]"
