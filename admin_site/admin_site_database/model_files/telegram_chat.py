@@ -33,15 +33,15 @@ class TelegramChat(BaseModel):
 
     objects = admin_db.TelegramChatManager
 
-    def as_json(self):
+    def as_json(self) -> dict:
         data = {
             "chat_id": self.telegram_id,
             "chat_name": self.name,
         }
-        # I'm not sure how to handle this properly :|
-        self.subscription: Subscription
+
         if self.subscription:
             data["subscription"] = self.subscription.as_json()
+
         return data
 
     def __str__(self) -> str:
