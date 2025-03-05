@@ -6,6 +6,10 @@ from typing import Any, Callable, TypeVar, cast, overload
 F = TypeVar("F", bound=Callable[..., Any])
 
 
+class Empty(object):
+    pass
+
+
 @overload
 def do_until_success(__func: F) -> F: ...
 
@@ -30,7 +34,7 @@ def do_until_success(
             tries = number_of_tries
             while tries:
                 tries -= 1
-                result = object
+                result = Empty()
                 try:
                     result = work_func(*args, **kwargs)
                 except Exception as e:
@@ -40,9 +44,9 @@ def do_until_success(
                     global_parser.sender.cookies._value = None
 
                     logging.warning(
-                        f"During exectution of {work_func.__name__} raised exeption {e}"
+                        f"During exectution of {work_func.__name__} raised exeption {e}",
                     )
-                if result != object:
+                if not isinstance(result, Empty):
                     return result
                 if tries:
                     sleep(delay)
