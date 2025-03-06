@@ -4,4 +4,4 @@ FROM mcr.microsoft.com/devcontainers/python:3
 USER vscode
 
 # For some reason defaults to root user
-COPY --chown=vscode:vscode . /workspaces/ontu-schedule-bot-admin
+COPY --chown=vscode:vscode . /workspace

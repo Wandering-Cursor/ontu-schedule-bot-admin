@@ -3,11 +3,11 @@ name: "ontu-schedule"
 services:
   backend:
     build:
-      context: ./../
+      context: ../
       dockerfile: .devcontainer/Dockerfile
     command: /bin/sh -c "while sleep 1000; do :; done"
     volumes:
-      - backend-data:/workspace
+      - backend-data:/workspace/
 
 volumes:
   backend-data:
