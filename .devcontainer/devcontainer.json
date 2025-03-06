@@ -1,6 +1,5 @@
 {
-  "name": "ONTU Schedule Bot",
-  // Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
+  "name": "ONTU Schedule Bot Admin",
   "dockerComposeFile": "docker-compose.yml",
   "service": "backend",
   "workspaceFolder": "/workspace",
