@@ -25,7 +25,7 @@ distribution = false
 
 [dependency-groups]
 dev = [
-    "ruff>=0.9.9",
+    "ruff>=0.14.0",
 ]
 
 [tool.pdm.scripts]
