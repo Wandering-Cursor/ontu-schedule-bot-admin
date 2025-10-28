@@ -1,8 +1,8 @@
 # Dockerfile for devcontainer
 FROM ghcr.io/astral-sh/uv:python3.14-alpine
 
-RUN groupadd --system --gid 999 nonroot \
- && useradd --system --gid 999 --uid 999 --create-home nonroot
+RUN addgroup -g 999 -S nonroot \
+ && adduser -u 999 -S -G nonroot -h /home/nonroot nonroot
 
 WORKDIR /app
 
