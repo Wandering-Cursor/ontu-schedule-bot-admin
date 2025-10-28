@@ -2,7 +2,7 @@
   "name": "ONTU Schedule Bot Admin",
   "dockerComposeFile": "docker-compose.yml",
   "service": "backend",
-  "workspaceFolder": "/workspace",
+  "workspaceFolder": "/app",
   "shutdownAction": "stopCompose",
   "customizations": {
     "vscode": {
@@ -18,5 +18,5 @@
       }
     }
   },
-  "postCreateCommand": "pdm install"
+  "postCreateCommand": "uv sync --locked"
 }
