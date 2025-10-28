@@ -12,7 +12,10 @@
         "ms-python.black-formatter",
         "ms-python.isort",
         "charliermarsh.ruff"
-      ]
+      ],
+      "settings": {
+        "editor.formatOnSave": true
+      }
     }
   },
   "postCreateCommand": "pdm install"
