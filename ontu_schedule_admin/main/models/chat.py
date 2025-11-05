@@ -1,7 +1,7 @@
-from main.models.base import BaseModel
 from django.db import models
 
-from ontu_schedule_admin.main.enums import Platform
+from main.enums import Platform
+from main.models.base import BaseModel
 
 
 class Chat(BaseModel):
@@ -22,7 +22,15 @@ class Chat(BaseModel):
     # for example, on Telegram - `topic_id`, `is_forum`, etc.
     additional_info = models.JSONField(blank=True, null=True)
 
-    def __str__(self):
+    subscription = models.OneToOneField(
+        "Subscription",
+        on_delete=models.CASCADE,
+        related_name="chat",
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self) -> str:
         return f"{self.platform} - {self.platform_chat_id}"
 
     class Meta(BaseModel.Meta):

@@ -14,7 +14,8 @@
             ],
             "django": true,
             "autoStartBrowser": false,
-            "program": "${workspaceFolder}/admin_site/manage.py"
+            "program": "${workspaceFolder}/ontu_schedule_admin/manage.py",
+            "justMyCode": false
         }
     ]
 }

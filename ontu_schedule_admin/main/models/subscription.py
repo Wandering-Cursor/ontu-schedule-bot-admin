@@ -1,12 +1,11 @@
-from main.models.base import BaseModel
 from django.db import models
+
+from main.models.base import BaseModel
 
 
 class Subscription(BaseModel):
-    chats = models.ManyToManyField(
-        "Chat",
-        related_name="subscriptions",
-        blank=True,
+    is_active = models.BooleanField(
+        default=True,
     )
 
     groups = models.ManyToManyField(
@@ -19,3 +18,9 @@ class Subscription(BaseModel):
         related_name="subscriptions",
         blank=True,
     )
+
+    def __str__(self) -> str:
+        return f"Subscription {self.uuid} - Active: {self.is_active}"
+
+    class Meta(BaseModel.Meta):
+        pass
