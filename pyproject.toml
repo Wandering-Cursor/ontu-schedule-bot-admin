@@ -5,8 +5,11 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "dj-database-url>=3.0.1",
     # "django-ninja>=1.4.5,<1.5",
     "django-ninja==1.5.0b1",
+    "django-redis>=6.0.0",
+    "pydantic-settings>=2.11.0",
     "rozklad-ontu-parser-makisukurisu>=0.1.2.0,<0.2",
 ]
 

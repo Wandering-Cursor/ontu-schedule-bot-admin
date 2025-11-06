@@ -1,6 +1,11 @@
+from typing import TYPE_CHECKING
+
 from django.db import models
 
 from main.models.base import BaseModel
+
+if TYPE_CHECKING:
+    from main.models.faculty import Faculty
 
 
 class Group(BaseModel):
@@ -12,7 +17,7 @@ class Group(BaseModel):
 
     short_name = models.CharField(max_length=255)
 
-    faculty = models.ForeignKey(
+    faculty: models.ForeignKey[Faculty] = models.ForeignKey(
         "Faculty",
         on_delete=models.CASCADE,
         related_name="groups",

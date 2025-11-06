@@ -8,3 +8,38 @@ services:
     command: /bin/sh -c "while sleep 1000; do :; done"
     volumes:
       - ../:/app/:z
+
+  cache:
+    image: 'docker.dragonflydb.io/dragonflydb/dragonfly'
+    ulimits:
+      memlock: -1
+    volumes:
+      - dragonflyData:/data
+
+  db:
+    image: postgres:18-alpine
+    shm_size: 128mb
+    environment:
+      POSTGRES_PASSWORD: local
+      PGDATA: /data/postgres
+    volumes:
+      - dbData:/data/postgres
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -d postgres" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@mail.com
+      - PGADMIN_DEFAULT_PASSWORD=root
+    ports:
+      - ":80"
+
+
+volumes:
+  dragonflyData:
+  dbData:

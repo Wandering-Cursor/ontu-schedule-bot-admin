@@ -26,3 +26,7 @@ def update_groups_from_api(faculty_ids: list[pydantic.UUID4] | None) -> None:
                     faculty=faculty,
                     short_name=group.get_group_name(),
                 )
+
+
+def read_group(group_id: pydantic.UUID4) -> Group:
+    return Group.objects.get(uuid=group_id)
