@@ -1,20 +1,20 @@
 import datetime
 from typing import TYPE_CHECKING, TypeVar
+from zoneinfo import ZoneInfo
 
 from django.utils import timezone
 from ontu_parser.classes import Parser
 from ontu_schedule_admin.api.utils.log import make_log
 
 if TYPE_CHECKING:
-    from zoneinfo import ZoneInfo
-
     from ontu_parser.classes.dataclasses import Department as ParserDepartment
     from ontu_parser.classes.dataclasses import Faculty as ParserFaculty
     from ontu_parser.classes.dataclasses import Group as ParserGroup
-    from ontu_parser.classes.dataclasses import StudentsPair
+    from ontu_parser.classes.dataclasses import StudentsPair, TeachersPair
     from ontu_parser.classes.dataclasses import Teacher as ParseTeacher
 
     from main.models.group import Group
+    from main.models.teacher import Teacher
 
 T = TypeVar("T")
 
@@ -143,7 +143,7 @@ def get_teachers(department_external_id: str) -> list[ParseTeacher]:
     )
 
 
-def get_schedule_by_group(
+def get_student_schedule_by_group(
     group: Group,
 ) -> dict[datetime.date, list[StudentsPair]]:
     api_group = get_group(group)
@@ -155,6 +155,16 @@ def get_schedule_by_group(
 
     result = global_parser.get_schedule(
         group_id=int(api_group.get_group_id()),  # pyright: ignore[reportArgumentType]
+    )
+
+    return remap_ukrainian_week_to_dates(result)
+
+
+def get_teacher_schedule_by_teacher(
+    teacher: Teacher,
+) -> dict[datetime.date, list[TeachersPair]]:
+    result = global_teacher_parser.get_schedule(
+        teacher_id=int(teacher.external_id),  # pyright: ignore[reportArgumentType]
     )
 
     return remap_ukrainian_week_to_dates(result)

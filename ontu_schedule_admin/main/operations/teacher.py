@@ -44,3 +44,7 @@ def update_teachers_from_api(
 
     for department in departments:
         _process_department(department)
+
+
+def read_teacher(teacher_id: pydantic.UUID4) -> Teacher:
+    return Teacher.objects.get(uuid=teacher_id)
