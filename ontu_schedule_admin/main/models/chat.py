@@ -1,7 +1,12 @@
+from typing import TYPE_CHECKING
+
 from django.db import models
 
 from main.enums import Platform
 from main.models.base import BaseModel
+
+if TYPE_CHECKING:
+    from main.models.subscription import Subscription
 
 
 class Chat(BaseModel):
@@ -22,7 +27,7 @@ class Chat(BaseModel):
     # for example, on Telegram - `topic_id`, `is_forum`, etc.
     additional_info = models.JSONField(blank=True, null=True)
 
-    subscription = models.OneToOneField(
+    subscription: Subscription | None = models.OneToOneField(
         "Subscription",
         on_delete=models.CASCADE,
         related_name="chat",

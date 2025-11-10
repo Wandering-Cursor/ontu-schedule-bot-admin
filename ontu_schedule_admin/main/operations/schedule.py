@@ -1,6 +1,8 @@
+import json
 from typing import TYPE_CHECKING
 
 from django.core.cache import cache
+from django.utils import timezone
 from ontu_schedule_admin.api.schemas.schedule import (
     DaySchedule,
     Lesson,
@@ -10,6 +12,7 @@ from ontu_schedule_admin.api.schemas.schedule import (
 from ontu_schedule_admin.api.schemas.schedule import Teacher as TeacherSchema
 from ontu_schedule_admin.api.utils.log import make_log
 
+from main.models.subscription import Subscription
 from main.operations.third_party.schedule_api import (
     get_student_schedule_by_group as api_get_schedule_by_group,
 )
@@ -17,7 +20,7 @@ from main.operations.third_party.schedule_api import get_teacher_schedule_by_tea
 
 if TYPE_CHECKING:
     import datetime
-    from collections.abc import Callable
+    from collections.abc import Callable, Generator
 
     from ontu_parser.classes.dataclasses import StudentsPair, TeachersPair
 
@@ -111,15 +114,19 @@ def _get_week_schedule(
 
     schedule = WeekSchedule(days=[])
     for date, pairs in api_schedule.items():
+        kwargs = {}
+        if entity_type == "teacher":
+            kwargs["teacher"] = entity
+
         schedule.days.append(
             DaySchedule(
                 date=date,
-                pairs=pairs_processor(pairs, teacher=entity if entity_type == "teacher" else None),
+                pairs=pairs_processor(pairs, **kwargs),
             )
         )
 
     # Cache the result
-    cache.set(cache_key, schedule, timeout=60 * 30)
+    cache.set(cache_key, schedule, timeout=60 * 15)
 
     make_log(
         {
@@ -153,6 +160,21 @@ def _get_day_schedule(  # noqa: PLR0913
     Returns:
         DaySchedule object or None if not found
     """
+    cache_key = f"{entity.uuid}_{entity_type}_schedule_{for_day.isoformat()}"
+    if not ignore_cache:
+        cached_day_schedule = cache.get(cache_key)
+        if cached_day_schedule is not None:
+            make_log(
+                {
+                    "msg": (
+                        f"Day schedule for {entity_type} {entity.short_name}"
+                        f"on {for_day} fetched from cache"
+                    ),
+                },
+                level="INFO",
+            )
+            return cached_day_schedule
+
     full_schedule = _get_week_schedule(
         entity=entity,
         entity_type=entity_type,
@@ -163,6 +185,7 @@ def _get_day_schedule(  # noqa: PLR0913
 
     for day in full_schedule.days:
         if day.date == for_day:
+            cache.set(cache_key, day, timeout=60 * 5)
             return day
 
     return None
@@ -221,3 +244,40 @@ def get_day_schedule(
         )
 
     raise ValueError("Either group or teacher must be provided.")
+
+
+def get_schedule_in_bulk() -> Generator[str]:
+    yield "[\n"
+
+    is_first = True
+    for subscription in Subscription.objects.filter(is_active=True):
+        if not is_first:
+            yield ",\n"
+        else:
+            is_first = False
+
+        schedules: list[DaySchedule | None] = []
+        for group in subscription.groups.all():
+            schedule = get_day_schedule(
+                for_day=timezone.now().date(),
+                group=group,
+            )
+            schedules.append(schedule)
+        for teacher in subscription.teachers.all():
+            schedule = get_day_schedule(
+                for_day=timezone.now().date(),
+                teacher=teacher,
+            )
+            schedules.append(schedule)
+
+        yield (
+            json.dumps(
+                {
+                    subscription.chat.platform_chat_id: [
+                        s.model_dump(mode="json") if s else None for s in schedules
+                    ]
+                }
+            )
+        )
+
+    yield "\n]"

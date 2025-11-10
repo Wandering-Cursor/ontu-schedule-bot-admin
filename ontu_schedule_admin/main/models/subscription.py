@@ -1,6 +1,11 @@
+from typing import TYPE_CHECKING
+
 from django.db import models
 
 from main.models.base import BaseModel
+
+if TYPE_CHECKING:
+    from main.models.chat import Chat
 
 
 class Subscription(BaseModel):
@@ -18,6 +23,8 @@ class Subscription(BaseModel):
         related_name="subscriptions",
         blank=True,
     )
+
+    chat: Chat
 
     def __str__(self) -> str:
         return f"Subscription {self.uuid} - Active: {self.is_active}"

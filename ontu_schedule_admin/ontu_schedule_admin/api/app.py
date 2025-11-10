@@ -7,6 +7,7 @@ from ninja import NinjaAPI
 
 from ontu_schedule_admin.api.decorators import request_id_decorator
 from ontu_schedule_admin.api.endpoints.admin.router import admin_router
+from ontu_schedule_admin.api.endpoints.chat.router import chat_router
 from ontu_schedule_admin.api.endpoints.public.router import public_router
 from ontu_schedule_admin.api.utils.log import make_log
 
@@ -56,3 +57,4 @@ def root(request: object) -> HttpResponsePermanentRedirect:  # noqa: ARG001
 
 app.add_router("/admin/", admin_router)
 app.add_router("/public/", public_router)
+app.add_router("/chat/", chat_router)

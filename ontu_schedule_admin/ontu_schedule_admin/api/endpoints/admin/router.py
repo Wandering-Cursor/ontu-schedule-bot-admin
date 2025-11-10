@@ -1,9 +1,9 @@
 from django.views.decorators.csrf import ensure_csrf_cookie
 from ninja import Router
-from ninja.security import django_auth
+from ninja.security import django_auth_is_staff
 
 admin_router = Router(
-    auth=django_auth,
+    auth=django_auth_is_staff,
     tags=[
         "Admin",
     ],

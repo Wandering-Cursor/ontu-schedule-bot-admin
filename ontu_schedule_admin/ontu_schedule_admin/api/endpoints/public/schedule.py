@@ -15,18 +15,21 @@ from ontu_schedule_admin.api.schemas.schedule import DaySchedule, WeekSchedule
 from .router import public_router
 
 schedule_router = Router(
-    tags=[
+    tags=(public_router.tags or [])
+    + [
         "Schedule",
     ],
 )
 
 student_schedule_router = Router(
-    tags=[
+    tags=(schedule_router.tags or [])
+    + [
         "Student",
     ],
 )
 teacher_schedule_router = Router(
-    tags=[
+    tags=(schedule_router.tags or [])
+    + [
         "Teacher",
     ],
 )
