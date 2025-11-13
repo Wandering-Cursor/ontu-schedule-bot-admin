@@ -1,14 +1,18 @@
 {
     "python.analysis.extraPaths": [
-        "./admin_site"
+        "./ontu_schedule_admin",
     ],
     "terminal.integrated.env.linux": {
-        "PYTHONPATH": "${workspaceFolder}/admin_site"
+        "PYTHONPATH": "${workspaceFolder}/ontu_schedule_admin"
     },
     "terminal.integrated.env.windows": {
-        "PYTHONPATH": "${workspaceFolder}\\admin_site"
+        "PYTHONPATH": "${workspaceFolder}\\ontu_schedule_admin"
     },
     "terminal.integrated.env.osx": {
-        "PYTHONPATH": "${workspaceFolder}/admin_site"
+        "PYTHONPATH": "${workspaceFolder}/ontu_schedule_admin"
+    },
+    "editor.codeActionsOnSave": {
+        "source.fixAll": "always",
+        "source.organizeImports": "always"
     },
 }

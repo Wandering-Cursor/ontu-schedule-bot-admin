@@ -1,46 +1,21 @@
 [project]
-name = "ontu-schedule-bot-admin"
+name = "workspace"
 version = "1.0.0"
-description = "Default template for PDM package"
-authors = [
-    {name = "Pavlo Pohorieltsev", email = "49622129+makisukurisu@users.noreply.github.com"},
-]
-dependencies = [
-    "Django>=4.2.19, <5",
-    "djangorestframework",
-    "djangoql",
-    "drf-spectacular",
-    "requests>=2.32.3,<3.0",
-    "rozklad-ontu-parser-MakisuKurisu>=0.1.2.0,<0.2",
-    "python-decouple>=3.8",
-    "uvicorn[standard]>=0.34.0,<0.35",
-]
-requires-python = ">=3.11"
+description = "Add your description here"
 readme = "README.md"
-license = {text = "MIT"}
-
-
-[tool.pdm]
-distribution = false
-
-[dependency-groups]
-dev = [
-    "ruff>=0.9.9",
+requires-python = ">=3.12"
+dependencies = [
+    "dj-database-url>=3.0.1",
+    # "django-ninja>=1.4.5,<1.5",
+    "django-ninja==1.5.0b1",
+    "django-redis>=6.0.0",
+    "psycopg[binary]>=3.2.12",
+    "pydantic-settings>=2.11.0",
+    "rozklad-ontu-parser-makisukurisu>=0.1.2.0,<0.2",
 ]
-
-[tool.pdm.scripts]
-_migrate = "python admin_site/manage.py migrate"
-_collectstatic = "python admin_site/manage.py collectstatic --noinput"
-
-_runserver.cmd = "uvicorn admin_site.asgi:application --host 0.0.0.0 --port 8000"
-_runserver.working_dir="admin_site"
-
-start = {"composite" = ["_migrate", "_collectstatic", "_runserver"]}
-
-manage = "python admin_site/manage.py"
 
 [tool.ruff]
-target-version = "py312"
+target-version = "py314"
 line-length = 100
 
 [tool.ruff.lint]
@@ -85,8 +60,6 @@ ignore = [
   "N999",
   "ERA001",
   "RUF012",
-  "ANN101",
-  "ANN102",
   "FBT001",
   "FBT002",
 ]
@@ -95,3 +68,7 @@ ignore = [
 quote-style = "double"
 docstring-code-format = true
 
+[dependency-groups]
+dev = [
+    "ruff>=0.14.3",
+]
