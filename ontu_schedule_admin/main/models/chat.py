@@ -33,7 +33,7 @@ class Chat(BaseModel):
         related_name="chat",
         null=True,
         blank=True,
-    )
+    )  # pyright: ignore[reportAssignmentType]
 
     def __str__(self) -> str:
         return f"{self.platform} - {self.platform_chat_id}"

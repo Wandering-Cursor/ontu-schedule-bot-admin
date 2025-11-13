@@ -9,7 +9,7 @@ from ontu_schedule_admin.api.schemas.schedule import (
     Pair,
     WeekSchedule,
 )
-from ontu_schedule_admin.api.schemas.schedule import Teacher as TeacherSchema
+from ontu_schedule_admin.api.schemas.teacher import ScheduleTeacherInfo, TeacherInfo
 from ontu_schedule_admin.api.utils.log import make_log
 
 from main.models.subscription import Subscription
@@ -37,7 +37,7 @@ def _process_student_pairs(pairs: list[StudentsPair]) -> list[Pair]:
                 Lesson(
                     short_name=lesson.lesson_name["short"],
                     full_name=lesson.lesson_name["full"],
-                    teacher=TeacherSchema(
+                    teacher=ScheduleTeacherInfo(
                         short_name=lesson.teacher["short"],
                         full_name=lesson.teacher["full"],
                     ),
@@ -63,9 +63,11 @@ def _process_teacher_pairs(
                 Lesson(
                     short_name=pair.lesson.name,
                     full_name=pair.lesson.name,
-                    teacher=TeacherSchema(
+                    teacher=TeacherInfo(
+                        uuid=teacher.uuid,
                         short_name=teacher.short_name,
                         full_name=teacher.full_name,
+                        departments=[dept.uuid for dept in teacher.departments.all()],
                     ),
                     card=pair.lesson.groups,
                 )

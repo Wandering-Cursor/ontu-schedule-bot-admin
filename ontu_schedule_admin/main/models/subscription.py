@@ -6,6 +6,8 @@ from main.models.base import BaseModel
 
 if TYPE_CHECKING:
     from main.models.chat import Chat
+    from main.models.group import Group
+    from main.models.teacher import Teacher
 
 
 class Subscription(BaseModel):
@@ -13,12 +15,12 @@ class Subscription(BaseModel):
         default=True,
     )
 
-    groups = models.ManyToManyField(
+    groups: models.ManyToManyField[Group, Group] = models.ManyToManyField(
         "Group",
         related_name="subscriptions",
         blank=True,
     )
-    teachers = models.ManyToManyField(
+    teachers: models.ManyToManyField[Teacher, Teacher] = models.ManyToManyField(
         "Teacher",
         related_name="subscriptions",
         blank=True,

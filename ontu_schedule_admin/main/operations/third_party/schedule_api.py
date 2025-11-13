@@ -34,7 +34,7 @@ UA_DAY_TO_OFFSET: dict[str, int] = {
     "Середа": 2,
     "Четвер": 3,
     "П'ятниця": 4,  # ASCII apostrophe
-    "П’ятниця": 4,  # Typographic apostrophe
+    "П’ятниця": 4,  # Typographic apostrophe  # noqa: RUF001
     "П`ятниця": 4,  # Backtick variant (observed in source)
     "Субота": 5,
     "Неділя": 6,
@@ -63,18 +63,21 @@ def _monday_of_relevant_week(today_kyiv: datetime.date) -> datetime.date:
     - If today is Sunday in Kyiv -> use next week's Monday
     - Otherwise -> use Monday of this week
     """
-    weekday = today_kyiv.weekday()  # Monday=0 ... Sunday=6
-    if weekday == 6:  # Sunday
+    sunday_index = 6
+
+    weekday = today_kyiv.weekday()
+
+    if weekday == sunday_index:  # Sunday
         return today_kyiv + datetime.timedelta(days=1)
     # Move back to Monday of the same week
     return today_kyiv - datetime.timedelta(days=weekday)
 
 
-def remap_ukrainian_week_to_dates(schedule_by_dayname: dict[str, T]) -> dict[datetime.date, T]:
+def remap_ukrainian_week_to_dates(schedule_by_dayname: dict[str, T]) -> dict[datetime.date, T]:  # noqa: UP047
     """Remap a dict keyed by Ukrainian weekday names to actual dates for Kyiv.
 
-    - If today (in Kyiv) is not Sunday: map to dates of the current week (Mon–Sat/Sun)
-    - If today is Sunday: map to dates of the next week (Mon–Sat/Sun)
+    - If today (in Kyiv) is not Sunday: map to dates of the current week (Mon-Sat/Sun)
+    - If today is Sunday: map to dates of the next week (Mon-Sat/Sun)
 
     Unknown keys are ignored.
     from zoneinfo import ZoneInfo, ZoneInfoNotFoundError  # type: ignore
@@ -157,7 +160,7 @@ def get_student_schedule_by_group(
         group_id=int(api_group.get_group_id()),  # pyright: ignore[reportArgumentType]
     )
 
-    return remap_ukrainian_week_to_dates(result)
+    return remap_ukrainian_week_to_dates(result)  # pyright: ignore[reportReturnType]
 
 
 def get_teacher_schedule_by_teacher(
@@ -167,4 +170,4 @@ def get_teacher_schedule_by_teacher(
         teacher_id=int(teacher.external_id),  # pyright: ignore[reportArgumentType]
     )
 
-    return remap_ukrainian_week_to_dates(result)
+    return remap_ukrainian_week_to_dates(result)  # pyright: ignore[reportReturnType]

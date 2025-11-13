@@ -1,6 +1,11 @@
+from typing import TYPE_CHECKING
+
 from django.db import models
 
 from main.models.base import BaseModel
+
+if TYPE_CHECKING:
+    from main.models.department import Department
 
 
 class Teacher(BaseModel):
@@ -13,7 +18,7 @@ class Teacher(BaseModel):
     short_name = models.CharField(max_length=255)
     full_name = models.CharField(max_length=1024)
 
-    departments = models.ManyToManyField(
+    departments: models.ManyToManyField[Department, Department] = models.ManyToManyField(
         "Department",
         related_name="teachers_m2m",
         blank=True,

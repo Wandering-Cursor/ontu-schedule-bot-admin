@@ -1,6 +1,6 @@
 import pydantic
-from main.models.api_user import APIUser
-from main.models.chat import Chat
+from main.models.api_user import APIUser  # noqa: TC002
+from main.models.chat import Chat  # noqa: TC002
 
 from ontu_schedule_admin.api.schemas.base import Schema
 
