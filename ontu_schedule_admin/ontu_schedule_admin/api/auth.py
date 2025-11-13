@@ -46,7 +46,6 @@ class AppAuthentication(HttpBasicAuth):
                 {
                     "msg": "ChatAuthentication: Invalid password",
                     "username": username,
-                    "password": password,
                     "request": {
                         "path": request.path,
                         "method": request.method,
