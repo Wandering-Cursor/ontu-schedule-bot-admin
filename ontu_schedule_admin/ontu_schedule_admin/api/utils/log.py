@@ -14,19 +14,21 @@ main_logger.setLevel(logging.INFO)
 RequestContextVar = ContextVar("current_request")
 
 
-
 SENSITIVE_KEYS = {"password"}
 
-def redact_sensitive_info(obj):
+
+def redact_sensitive_info(obj: object) -> object:
     if isinstance(obj, dict):
         return {
             k: "[REDACTED]" if k.lower() in SENSITIVE_KEYS else redact_sensitive_info(v)
             for k, v in obj.items()
         }
-    elif isinstance(obj, list):
+
+    if isinstance(obj, list):
         return [redact_sensitive_info(item) for item in obj]
-    else:
-        return obj
+
+    return obj
+
 
 def make_log(
     message: dict,
