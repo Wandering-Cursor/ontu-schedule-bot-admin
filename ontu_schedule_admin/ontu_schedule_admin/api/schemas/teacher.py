@@ -1,6 +1,11 @@
 import pydantic
 
-from ontu_schedule_admin.api.schemas.base import APISchema, Schema
+from ontu_schedule_admin.api.schemas.base import (
+    APISchema,
+    PaginatedRequest,
+    PaginatedResponse,
+    Schema,
+)
 from ontu_schedule_admin.api.schemas.department import Department  # noqa: TC001
 
 
@@ -42,3 +47,19 @@ class ScheduleTeacherInfo(Schema):
 
     short_name: str
     full_name: str
+
+
+class TeacherPaginatedRequest(PaginatedRequest):
+    department_id: pydantic.UUID4 | None = pydantic.Field(
+        default=None,
+        description="Filter teachers by department ID.",
+    )
+
+    name: str | None = pydantic.Field(
+        default=None,
+        description="Filter teachers by name (partial match).",
+    )
+
+
+class TeacherPaginatedResponse(PaginatedResponse[Teacher]):
+    pass

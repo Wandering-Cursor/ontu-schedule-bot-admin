@@ -1,6 +1,11 @@
 import pydantic
 
-from ontu_schedule_admin.api.schemas.base import APISchema, Schema
+from ontu_schedule_admin.api.schemas.base import (
+    APISchema,
+    PaginatedRequest,
+    PaginatedResponse,
+    Schema,
+)
 from ontu_schedule_admin.api.schemas.faculty import Faculty  # noqa: TC001
 
 
@@ -23,3 +28,18 @@ class GroupInfo(Schema):
 
     short_name: str
     faculty_id: pydantic.UUID4
+
+
+class GroupPaginatedRequest(PaginatedRequest):
+    faculty_id: pydantic.UUID4 | None = pydantic.Field(
+        default=None,
+        description="Filter groups by faculty ID.",
+    )
+    name: str | None = pydantic.Field(
+        default=None,
+        description="Filter groups by name (partial match).",
+    )
+
+
+class GroupPaginatedResponse(PaginatedResponse[Group]):
+    pass
