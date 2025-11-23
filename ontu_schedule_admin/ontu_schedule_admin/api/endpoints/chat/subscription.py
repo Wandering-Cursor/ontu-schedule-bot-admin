@@ -30,6 +30,26 @@ subscription_router = Router(
 )
 
 
+@subscription_router.post(
+    "/",
+    response=Subscription,
+)
+def create_subscription(
+    request: HttpRequest,
+    chat_id: str = Header(alias="X-Chat-ID"),  # noqa: ARG001
+) -> Subscription:
+    auth: ChatAuthenticationSchema = getattr(request, "auth", None)  # pyright: ignore[reportAssignmentType]
+
+    if auth.chat.subscription:
+        raise HttpError(400, message="Chat already has a subscription.")
+
+    subscription = subscription_ops.create_subscription(
+        chat=auth.chat,
+    )
+
+    return subscription_ops.read_subscription_info(subscription)
+
+
 @subscription_router.get(
     "/info",
     response=Subscription,

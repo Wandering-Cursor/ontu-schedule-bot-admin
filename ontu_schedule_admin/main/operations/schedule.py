@@ -114,7 +114,7 @@ def _get_week_schedule(
 
     api_schedule = api_fetch_func(entity)
 
-    schedule = WeekSchedule(days=[])
+    schedule = WeekSchedule(days=[], for_entity=entity.short_name)
     for date, pairs in api_schedule.items():
         kwargs = {}
         if entity_type == "teacher":
@@ -122,6 +122,7 @@ def _get_week_schedule(
 
         schedule.days.append(
             DaySchedule(
+                for_entity=entity.short_name,
                 date=date,
                 pairs=pairs_processor(pairs, **kwargs),
             )

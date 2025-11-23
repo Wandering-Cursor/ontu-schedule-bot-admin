@@ -33,10 +33,14 @@ class Pair(APISchema):
 
 
 class DaySchedule(APISchema):
+    for_entity: str
+
     date: datetime.date
 
     pairs: list[Pair]
 
 
 class WeekSchedule(APISchema):
+    for_entity: str
+
     days: list[DaySchedule]
