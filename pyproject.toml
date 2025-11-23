@@ -1,6 +1,6 @@
 [project]
-name = "workspace"
-version = "1.0.0"
+name = "ontu-schedule-admin"
+version = "1.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -9,6 +9,7 @@ dependencies = [
     # "django-ninja>=1.4.5,<1.5",
     "django-ninja==1.5.0b1",
     "django-redis>=6.0.0",
+    "djangorestframework>=3.16.1",
     "psycopg[binary]>=3.2.12",
     "pydantic-settings>=2.11.0",
     "rozklad-ontu-parser-makisukurisu>=0.1.2.0,<0.2",

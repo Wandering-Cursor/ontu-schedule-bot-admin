@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     debug: bool = False
     security_key: str
 
-    allowed_hosts: list[str] = [".localhost", "127.0.0.1", "[::1]"]
+    allowed_hosts: list[str] = [".localhost", "127.0.0.1", "[::1]", "backend"]
 
     redis_url: pydantic.RedisDsn = pydantic.RedisDsn("redis://cache:6379/0")
     db_url: pydantic.PostgresDsn = pydantic.PostgresDsn(

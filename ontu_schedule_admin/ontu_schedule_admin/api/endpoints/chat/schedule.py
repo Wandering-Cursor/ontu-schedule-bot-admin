@@ -5,6 +5,7 @@ Allows to get schedule for authenticated (via chat) users.
 import datetime
 from typing import TYPE_CHECKING
 
+from django.db import transaction
 from django.http import HttpRequest  # noqa: TC002
 from django.utils import timezone
 from main.operations import schedule as schedule_ops
@@ -12,7 +13,7 @@ from ninja import Router
 from ninja.params.functions import Header as HeaderF
 
 from ontu_schedule_admin.api.auth import ChatAuthentication
-from ontu_schedule_admin.api.schemas.schedule import DaySchedule, WeekSchedule  # noqa: TC001
+from ontu_schedule_admin.api.schemas.schedule import DaySchedule, WeekSchedule
 
 from .router import chat_router
 
@@ -30,7 +31,9 @@ schedule_router = Router(
 
 @schedule_router.get(
     "/tomorrow",
+    response=list[DaySchedule | None],
 )
+@transaction.atomic
 def get_tomorrow_schedule(
     request: HttpRequest,
     chat_id: str = HeaderF(alias="X-Chat-ID"),  # noqa: ARG001
@@ -55,7 +58,9 @@ def get_tomorrow_schedule(
 
 @schedule_router.get(
     "/today",
+    response=list[DaySchedule | None],
 )
+@transaction.atomic
 def get_today_schedule(
     request: HttpRequest,
     chat_id: str = HeaderF(alias="X-Chat-ID"),  # noqa: ARG001
@@ -80,7 +85,9 @@ def get_today_schedule(
 
 @schedule_router.get(
     "/week",
+    response=list[WeekSchedule],
 )
+@transaction.atomic
 def get_week_schedule(
     request: HttpRequest,
     chat_id: str = HeaderF(alias="X-Chat-ID"),  # noqa: ARG001
@@ -107,7 +114,9 @@ def get_week_schedule(
 
 @schedule_router.get(
     "/day/{for_date}",
+    response=list[DaySchedule | None],
 )
+@transaction.atomic
 def get_day_schedule(
     request: HttpRequest,
     for_date: datetime.date,

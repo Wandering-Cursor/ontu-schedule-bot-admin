@@ -1,6 +1,6 @@
-import pydantic  # noqa: TC002
+import pydantic
 
-from ontu_schedule_admin.api.schemas.base import Schema
+from ontu_schedule_admin.api.schemas.base import PaginatedRequest, PaginatedResponse, Schema
 
 
 class Department(Schema):
@@ -8,3 +8,14 @@ class Department(Schema):
 
     short_name: str
     full_name: str
+
+
+class DepartmentPaginatedRequest(PaginatedRequest):
+    name: str | None = pydantic.Field(
+        default=None,
+        description="Filter departments by name (partial match).",
+    )
+
+
+class DepartmentPaginatedResponse(PaginatedResponse[Department]):
+    pass
