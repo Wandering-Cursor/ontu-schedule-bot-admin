@@ -1,6 +1,6 @@
 from django.http import HttpRequest  # noqa: TC002
 from main.models.chat import Chat
-from main.models.subscription import Subscription
+from main.operations import subscription as subscription_ops
 from ninja.errors import HttpError
 
 from ontu_schedule_admin.api.schemas.chat import Chat as ChatSchema
@@ -32,7 +32,7 @@ def create_chat(
     )
 
     if created:
-        chat.subscription = Subscription.objects.create()
+        chat.subscription = subscription_ops.create_subscription(chat=chat)
         chat.save()
 
     return ChatSchema.model_validate(ChatSerializer(chat).data)

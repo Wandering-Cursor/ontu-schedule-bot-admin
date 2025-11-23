@@ -3,6 +3,7 @@ from django.core.paginator import Paginator
 from django.http import HttpRequest  # noqa: TC002
 from main.models.department import Department
 from ninja import Query, Router
+from ninja.errors import HttpError
 
 from ontu_schedule_admin.api.schemas.base import Meta
 from ontu_schedule_admin.api.schemas.department import (
@@ -62,13 +63,11 @@ def read_department(
     request: HttpRequest,  # noqa: ARG001
     department_id: pydantic.UUID4,
 ) -> DepartmentSchema:
-    return DepartmentSchema.model_validate(
-        DepartmentSerializer(
-            Department.objects.get(
-                uuid=department_id,
-            ),
-        ).data
-    )
+    try:
+        department = Department.objects.get(uuid=department_id)
+    except Department.DoesNotExist as e:
+        raise HttpError(404, message="Department not found.") from e
+    return DepartmentSchema.model_validate(DepartmentSerializer(department).data)
 
 
 public_router.add_router("/department", departments_router)

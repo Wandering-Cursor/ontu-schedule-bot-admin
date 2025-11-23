@@ -3,6 +3,7 @@ from django.core.paginator import Paginator
 from django.http import HttpRequest  # noqa: TC002
 from main.models.teacher import Teacher
 from ninja import Query, Router
+from ninja.errors import HttpError
 
 from ontu_schedule_admin.api.schemas.base import Meta
 from ontu_schedule_admin.api.schemas.teacher import (
@@ -33,7 +34,7 @@ def read_teachers(
     if query.department_id:
         qs = qs.filter(
             departments__uuid=query.department_id,
-        )
+        ).distinct()
     if query.name:
         qs = qs.filter(
             full_name__icontains=query.name,
@@ -64,15 +65,13 @@ def read_teachers(
 @teachers_router.get("/{teacher_id}", response=TeacherSchema)
 def read_teacher(
     request: HttpRequest,  # noqa: ARG001
-    teacher_id: Query[pydantic.UUID4],
+    teacher_id: pydantic.UUID4,
 ) -> TeacherSchema:
-    return TeacherSchema.model_validate(
-        TeacherSerializer(
-            Teacher.objects.get(
-                uuid=teacher_id,
-            ),
-        ).data
-    )
+    try:
+        teacher = Teacher.objects.get(uuid=teacher_id)
+    except Teacher.DoesNotExist as e:
+        raise HttpError(404, message="Teacher not found.") from e
+    return TeacherSchema.model_validate(TeacherSerializer(teacher).data)
 
 
 public_router.add_router("/teacher", teachers_router)

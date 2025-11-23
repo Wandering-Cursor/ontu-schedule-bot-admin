@@ -3,6 +3,7 @@ from django.core.paginator import Paginator
 from django.http import HttpRequest  # noqa: TC002
 from main.models.faculty import Faculty
 from ninja import Query, Router
+from ninja.errors import HttpError
 
 from ontu_schedule_admin.api.schemas.base import Meta
 from ontu_schedule_admin.api.schemas.faculty import (
@@ -62,13 +63,11 @@ def read_faculty(
     request: HttpRequest,  # noqa: ARG001
     faculty_id: pydantic.UUID4,
 ) -> FacultySchema:
-    return FacultySchema.model_validate(
-        FacultySerializer(
-            Faculty.objects.get(
-                uuid=faculty_id,
-            ),
-        ).data
-    )
+    try:
+        faculty = Faculty.objects.get(uuid=faculty_id)
+    except Faculty.DoesNotExist as e:
+        raise HttpError(404, message="Faculty not found.") from e
+    return FacultySchema.model_validate(FacultySerializer(faculty).data)
 
 
 public_router.add_router("/faculty", faculties_router)

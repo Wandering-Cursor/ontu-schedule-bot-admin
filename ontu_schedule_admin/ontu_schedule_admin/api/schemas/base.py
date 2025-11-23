@@ -1,4 +1,4 @@
-from ast import TypeVar
+from typing import TypeVar
 
 import pydantic
 from ninja import Schema as APISchema
