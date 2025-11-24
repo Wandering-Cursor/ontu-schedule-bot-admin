@@ -62,3 +62,14 @@ def make_log(
             default=repr,
         ),
     )
+
+
+def message_to_json(message: object) -> str:
+    """
+    Converts virtually any object to a JSON string
+    uses json.dumps and default to `repr()`
+    """
+    try:
+        return json.dumps(message, default=repr)
+    except (TypeError, ValueError):
+        return json.dumps(str(message))

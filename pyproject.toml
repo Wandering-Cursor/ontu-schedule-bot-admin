@@ -5,14 +5,16 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "daphne>=4.2.1",
     "dj-database-url>=3.0.1",
-    # "django-ninja>=1.4.5,<1.5",
-    "django-ninja==1.5.0b1",
+    "django-guid>=3.5.2",
+    "django-ninja>=1.5.0,<1.6.0",
     "django-redis>=6.0.0",
     "djangorestframework>=3.16.1",
     "psycopg[binary]>=3.2.12",
     "pydantic-settings>=2.11.0",
     "rozklad-ontu-parser-makisukurisu>=0.1.2.0,<0.2",
+    "whitenoise>=6.11.0",
 ]
 
 [tool.ruff]

@@ -10,10 +10,15 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+import json
+import logging
+import sys
+import typing
 from pathlib import Path
 
 import dj_database_url
 
+from ontu_schedule_admin.api.utils.log import message_to_json
 from ontu_schedule_admin.config import app_settings
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -29,17 +34,21 @@ ALLOWED_HOSTS = app_settings.allowed_hosts
 # Application definition
 
 INSTALLED_APPS = [
+    "daphne",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django_guid",
     "main",
 ]
 
 MIDDLEWARE = [
+    "django_guid.middleware.guid_middleware",
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -66,6 +75,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "ontu_schedule_admin.wsgi.application"
+ASGI_APPLICATION = "ontu_schedule_admin.asgi.application"
 
 
 # Database
@@ -115,6 +125,19 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = "static/"
+STATIC_ROOT = BASE_DIR.parent / "static"
+
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
+
+MEDIA_URL = "media/"
+MEDIA_ROOT = BASE_DIR.parent / "media"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -129,4 +152,214 @@ CACHES = {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
         },
     }
+}
+
+
+class IgnoreClientDisconnect(logging.Filter):
+    def filter(self, record: logging.LogRecord) -> bool:
+        if record.exc_info:
+            exc_type, _, _ = record.exc_info
+            if exc_type and "CancelledError" in exc_type.__name__:
+                return False
+        return True
+
+
+class JSONLoggerBase(logging.Formatter):
+    def _add_from_record(
+        self,
+        value: str,
+        log_record: logging.LogRecord,
+        attribute: typing.Literal["exc_text", "stack_info"],
+    ) -> str:
+        extra_value = getattr(log_record, attribute, "<Not found>")
+
+        try:
+            json_data = json.loads(value)
+            json_data[attribute] = extra_value
+            return message_to_json(json_data)
+        except Exception:  # noqa: BLE001
+            json_data = {
+                "original_message": value.rstrip(),
+                attribute: extra_value,
+                "extra_info": f"Could not add {attribute} into JSON message, because either it or log entry is malformed",  # noqa: E501
+            }
+            return message_to_json(json_data)
+
+    def format(self, record: logging.LogRecord) -> str:
+        # Overrides because default formatter is meant for plaintext
+
+        msg = record.getMessage()
+
+        # Somehow escape " characters in JSON payload, where they aren't.
+        record.message = msg
+
+        if self.usesTime():
+            record.asctime = self.formatTime(record, self.datefmt)
+        s = self.formatMessage(record)
+        # Cache the traceback text to avoid converting it multiple times
+        # (it's constant anyway)
+        if record.exc_info and not record.exc_text:
+            record.exc_text = self.formatException(record.exc_info)
+
+        if record.exc_text:
+            s = self._add_from_record(s, record, "exc_text")
+        if record.stack_info:
+            s = self._add_from_record(s, record, "stack_info")
+
+        return s
+
+
+class CustomJsonFormatter(JSONLoggerBase):
+    # ANSI color codes
+    COLORS: typing.ClassVar[dict[str, str]] = {
+        "DEBUG": "\033[36m",  # Blue
+        "INFO": "\033[32m",  # Green
+        "WARNING": "\033[33m",  # Yellow
+        "ERROR": "\033[31m",  # Red
+        "CRITICAL": "\033[1;31m",  # bold Red
+        "RESET": "\033[0m",  # Reset color
+    }
+    # Levels for which we color the entire JSON
+    FULL_COLOR_LEVELS: typing.ClassVar[set] = {"WARNING", "ERROR", "CRITICAL"}
+
+    def __init__(self, *args, **kwargs) -> None:  # noqa: ANN002, ANN003
+        super().__init__(*args, **kwargs)
+        self.use_colors = hasattr(sys.stdout, "isatty") and sys.stdout.isatty()
+
+    def format(self, record: logging.LogRecord) -> str:
+        # Removes None: None log for custom errors
+        if isinstance(record.exc_info, tuple):
+            unique_info = set(record.exc_info)
+            if unique_info == {None}:
+                record.exc_info = None
+
+        # If the message is not a JSON object, wrap it in one
+        if isinstance(record.msg, dict):
+            record.msg = message_to_json(record.msg)
+        elif not record.msg.startswith("{"):
+            record.msg = message_to_json({"msg": record.msg})
+
+        if not DEBUG:
+            return super().format(record)
+
+        if not self.use_colors:
+            return super().format(record)
+
+        color = self.COLORS.get(record.levelname, "")
+        reset = self.COLORS["RESET"]
+
+        # For WARNING, ERROR, CRITICAL we color the entire JSON
+        if record.levelname in self.FULL_COLOR_LEVELS:
+            formatted = super().format(record)
+            return f"{color}{formatted}{reset}"
+
+        # For the remaining levels, we paint only level
+        original_levelname = record.levelname
+        record.levelname = f"{color}{record.levelname}{reset}"
+
+        formatted = super().format(record)
+
+        # Restore the original level name
+        record.levelname = original_levelname
+        return formatted
+
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "()": CustomJsonFormatter,
+            "format": '{"timestamp": "%(asctime)s", "level": "%(levelname)s", "file": "%(pathname)s:%(lineno)d", "log": %(message)s, "correlation_id": "%(correlation_id)s"}',  # noqa: E501
+        },
+        "simple": {
+            "()": CustomJsonFormatter,
+            "format": '{"level": "%(levelname)s", "log": %(message)s, "correlation_id": "%(correlation_id)s"}',  # noqa: E501
+        },
+        "security_format": {
+            "()": CustomJsonFormatter,
+            "format": '{"timestamp": "%(asctime)s", "level": "%(levelname)s", "file": "%(pathname)s:%(lineno)d", "event_type": "Security Event", "log": %(message)s, "correlation_id": "%(correlation_id)s"}',  # noqa: E501
+        },
+    },
+    "filters": {
+        "correlation_id": {
+            "()": "django_guid.log_filters.CorrelationId",
+        },
+        "ignore_client_disconnect": {
+            "()": IgnoreClientDisconnect,
+        },
+    },
+    "handlers": {
+        "console": {
+            "level": "DEBUG",
+            "class": "logging.StreamHandler",
+            "formatter": "verbose",
+            "stream": "ext://sys.stdout",
+            "filters": ["correlation_id"],
+        },
+        "security_handler": {
+            "level": "INFO",
+            "class": "logging.StreamHandler",
+            "formatter": "security_format",
+            "stream": "ext://sys.stdout",
+            "filters": ["correlation_id"],
+        },
+    },
+    "loggers": {
+        "": {
+            "handlers": ["console"],
+            "level": "INFO",
+        },
+        "uvicorn": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "uvicorn.access": {
+            "handlers": ["console"],
+            "level": "WARNING",
+            "propagate": False,
+        },
+        "uvicorn.error": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "django": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "django.request": {
+            "handlers": ["console"],
+            "level": "ERROR",
+            "propagate": False,
+            "filters": ["ignore_client_disconnect"],
+        },
+        "django.security": {
+            "handlers": ["security_handler"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "django.security.csrf": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "ontu_schedule_admin": {
+            "handlers": ["console"],
+            "level": "DEBUG",
+            "propagate": False,
+        },
+    },
+}
+
+DJANGO_GUID = {
+    "GUID_HEADER_NAME": "Correlation-ID",
+    "VALIDATE_GUID": True,
+    "RETURN_HEADER": True,
+    "EXPOSE_HEADER": True,
+    "INTEGRITY_CHECK": True,
+    "IGNORE_URLS": [],
+    "UUID_LENGTH": 32,
 }
