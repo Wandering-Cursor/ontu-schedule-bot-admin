@@ -1,39 +1,47 @@
 # Dockerfile for devcontainer
-FROM ghcr.io/astral-sh/uv:python3.14-alpine
-
-RUN groupadd --system --gid 999 nonroot \
- && useradd --system --gid 999 --uid 999 --create-home nonroot
+FROM ghcr.io/astral-sh/uv:python3.14-alpine AS builder
 
 WORKDIR /app
 
 # Enable bytecode compilation
 ENV UV_COMPILE_BYTECODE=1
-
 # Copy from the cache instead of linking since it's a mounted volume
 ENV UV_LINK_MODE=copy
-
 # Ensure installed tools can be executed out of the box
 ENV UV_TOOL_BIN_DIR=/usr/local/bin
 
-COPY pyproject.toml uv.lock /app/
-# Install the project's dependencies using the lockfile and settings
+# Change the working directory to the `app` directory
+WORKDIR /app
+
+# Install dependencies
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --locked --no-install-project --no-dev
+    --mount=type=bind,source=uv.lock,target=uv.lock \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    uv sync --locked --no-install-project --no-editable
 
-# Then, add the rest of the project source code and install it
-# Installing separately from its dependencies allows optimal layer caching
-COPY . /app
+# Copy the project into the intermediate image
+ADD . /app
+
+# Sync the project
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --locked --no-dev
+    uv sync --locked --no-editable
 
-# Place executables in the environment at the front of the path
-ENV PATH="/app/.venv/bin:$PATH"
+FROM python:3.14-alpine
 
-# Reset the entrypoint, don't invoke `uv`
-ENTRYPOINT []
+RUN apk add --no-cache openssl-dev libffi-dev build-base
 
-# Use the non-root user to run our application
-USER nonroot
+RUN addgroup -S app && adduser -S app -G app app
 
-# Update
-CMD ["fastapi", "run", "--host", "0.0.0.0", "src/main:app"]
+WORKDIR /app
+
+# Copy the environment, but not the source code
+COPY --from=builder --chown=app:app /app/.venv /app/.venv
+
+COPY ontu_schedule_admin /app/ontu_schedule_admin
+
+USER app
+
+ENV PYTHONPATH=/app/ontu_schedule_admin
+
+# Run asgi server for Django
+CMD ["/app/.venv/bin/python", "-m", "daphne", "ontu_schedule_admin.asgi:application", "-p", "8000", "-b", "0.0.0.0"]
