@@ -35,5 +35,5 @@ ENTRYPOINT []
 # Use the non-root user to run our application
 USER nonroot
 
-# Update
-CMD ["fastapi", "run", "--host", "0.0.0.0", "src/main:app"]
+# Run asgi server for Django
+CMD ["uv", "run", "daphne", "ontu_schedule_admin.asgi:application", "--host", "0.0.0.0"]
