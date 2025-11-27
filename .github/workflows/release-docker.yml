@@ -36,4 +36,4 @@ jobs:
           file: ./Dockerfile
           push: true
           # Hardcoding org name in lowercase
-          tags: ghcr.io/wandering-cursor/ontu-schedule-bot:${{ steps.get_version.outputs.version }}
+          tags: ghcr.io/wandering-cursor/ontu-schedule-bot-admin:${{ steps.get_version.outputs.version }}
