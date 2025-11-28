@@ -39,11 +39,11 @@ COPY --from=builder --chown=app:app /app/.venv /app/.venv
 
 COPY ontu_schedule_admin /app/ontu_schedule_admin
 
-RUN mkdir -p /app/staticfiles
-RUN mkdir -p /app/mediafiles
+RUN mkdir -p /app/static
+RUN mkdir -p /app/media
 
-RUN chown -R app:app /app/staticfiles
-RUN chown -R app:app /app/mediafiles
+RUN chown -R app:app /app/static
+RUN chown -R app:app /app/media
 
 USER app
 
