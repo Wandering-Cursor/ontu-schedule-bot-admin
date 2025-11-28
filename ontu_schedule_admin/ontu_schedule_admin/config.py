@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     )
 
     debug: bool = False
-    security_key: str
+    security_key: str = "fake-key"
 
     allowed_hosts: list[str] = [".localhost", "127.0.0.1", "[::1]", "backend"]
 

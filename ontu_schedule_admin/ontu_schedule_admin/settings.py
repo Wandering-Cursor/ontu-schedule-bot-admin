@@ -29,6 +29,7 @@ SECRET_KEY = app_settings.security_key
 DEBUG = app_settings.debug
 
 ALLOWED_HOSTS = app_settings.allowed_hosts
+CSRF_TRUSTED_ORIGINS = [f"https://{host}" for host in ALLOWED_HOSTS if not host.startswith(".")]
 
 
 # Application definition

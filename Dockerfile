@@ -39,6 +39,14 @@ COPY --from=builder --chown=app:app /app/.venv /app/.venv
 
 COPY ontu_schedule_admin /app/ontu_schedule_admin
 
+RUN mkdir -p /app/static
+RUN mkdir -p /app/media
+
+RUN /app/.venv/bin/python /app/ontu_schedule_admin/manage.py collectstatic --noinput
+
+RUN chown -R app:app /app/static
+RUN chown -R app:app /app/media
+
 USER app
 
 ENV PYTHONPATH=/app/ontu_schedule_admin
