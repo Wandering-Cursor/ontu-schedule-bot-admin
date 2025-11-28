@@ -39,12 +39,15 @@ COPY --from=builder --chown=app:app /app/.venv /app/.venv
 
 COPY ontu_schedule_admin /app/ontu_schedule_admin
 
+RUN mkdir -p /app/staticfiles
+RUN mkdir -p /app/mediafiles
+
+RUN chown -R app:app /app/staticfiles
+RUN chown -R app:app /app/mediafiles
+
 USER app
 
 ENV PYTHONPATH=/app/ontu_schedule_admin
-
-RUN mkdir -p /app/staticfiles
-RUN mkdir -p /app/mediafiles
 
 # Run asgi server for Django
 CMD ["/app/.venv/bin/python", "-m", "daphne", "ontu_schedule_admin.asgi:application", "-p", "8000", "-b", "0.0.0.0"]
