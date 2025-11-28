@@ -156,9 +156,14 @@ def get_student_schedule_by_group(
             f"Group {group.short_name} not found in faculty {group.faculty.short_name}"
         )
 
-    result = global_parser.get_schedule(
-        group_id=int(api_group.get_group_id()),  # pyright: ignore[reportArgumentType]
-    )
+    try:
+        result = global_parser.get_schedule(
+            group_id=int(api_group.get_group_id()),  # pyright: ignore[reportArgumentType]
+        )
+    except ValueError as e:
+        if len(e.args) >= 2 and e.args[1] == 503:  # noqa: PLR2004
+            global_parser.sender.cookies._value = None  # noqa: SLF001
+        raise e
 
     return remap_ukrainian_week_to_dates(result)  # pyright: ignore[reportReturnType]
 
