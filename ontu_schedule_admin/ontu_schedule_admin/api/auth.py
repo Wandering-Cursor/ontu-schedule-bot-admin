@@ -20,6 +20,7 @@ class AppAuthentication(HttpBasicAuth):
         username: str,
         password: str,
     ) -> APIUser | None:
+        timer = timezone.now()
         try:
             user = APIUser.objects.get(username=username)
         except APIUser.DoesNotExist:
@@ -41,6 +42,13 @@ class AppAuthentication(HttpBasicAuth):
             )
             return None
 
+        make_log(
+            {
+                "msg": "ChatAuthentication: User found",
+                "time_taken_ms": (timezone.now() - timer).total_seconds() * 1000,
+            }
+        )
+
         if not user.check_password(password):
             make_log(
                 {
@@ -60,8 +68,24 @@ class AppAuthentication(HttpBasicAuth):
             )
             return None
 
+        make_log(
+            {
+                "msg": "ChatAuthentication: User authenticated successfully",
+                "username": username,
+                "time_taken_ms": (timezone.now() - timer).total_seconds() * 1000,
+            }
+        )
+
         user.last_login = timezone.now()
         user.save(update_fields=["last_login"])
+
+        make_log(
+            {
+                "msg": "ChatAuthentication: User last_login updated",
+                "username": username,
+                "time_taken_ms": (timezone.now() - timer).total_seconds() * 1000,
+            }
+        )
 
         return user
 
@@ -70,11 +94,27 @@ class ChatAuthentication(AppAuthentication):
     def authenticate(  # type: ignore
         self, request: HttpRequest, username: str, password: str
     ) -> ChatAuthenticationSchema | None:
+        timer = timezone.now()
         user = super().authenticate(request, username, password)
         if user is None:
             return None
+        make_log(
+            {
+                "msg": "ChatAuthentication: Super authentication successful",
+                "username": username,
+                "time_taken_ms": (timezone.now() - timer).total_seconds() * 1000,
+            }
+        )
 
         chat = Chat.objects.get(platform_chat_id=request.headers.get("X-Chat-ID", ""))
+
+        make_log(
+            {
+                "msg": "ChatAuthentication: Chat found",
+                "platform_chat_id": chat.platform_chat_id,
+                "time_taken_ms": (timezone.now() - timer).total_seconds() * 1000,
+            }
+        )
 
         request.chat = chat
 
