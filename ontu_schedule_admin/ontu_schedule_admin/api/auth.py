@@ -1,5 +1,7 @@
+import hashlib
 from typing import TYPE_CHECKING
 
+from django.core.cache import cache
 from django.http import HttpRequest
 from django.utils import timezone
 from main.models.api_user import APIUser
@@ -49,7 +51,13 @@ class AppAuthentication(HttpBasicAuth):
             }
         )
 
-        if not user.check_password(password):
+        # Fast-path: cache successful password checks for 30 seconds
+        pw_hash = hashlib.sha256(password.encode("utf-8")).hexdigest()
+        cache_key_pw = f"auth:pw_ok:{username}:{pw_hash}"
+        pw_ok = cache.get(cache_key_pw)
+        if pw_ok is True:
+            pass
+        elif not user.check_password(password):
             make_log(
                 {
                     "msg": "ChatAuthentication: Invalid password",
@@ -67,6 +75,9 @@ class AppAuthentication(HttpBasicAuth):
                 level="WARNING",
             )
             return None
+        else:
+            # Cache success to avoid repeated expensive PBKDF2 checks
+            cache.set(cache_key_pw, True, timeout=30)  # noqa: FBT003
 
         make_log(
             {
@@ -116,7 +127,7 @@ class ChatAuthentication(AppAuthentication):
             }
         )
 
-        request.chat = chat
+        request.chat = chat  # pyright: ignore[reportAttributeAccessIssue]
 
         return ChatAuthenticationSchema(
             api_user=user,
