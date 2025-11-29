@@ -40,3 +40,6 @@ class Chat(BaseModel):
 
     class Meta(BaseModel.Meta):
         unique_together = ("platform", "platform_chat_id")
+        indexes = [
+            models.Index(fields=["platform", "platform_chat_id"]),
+        ]
