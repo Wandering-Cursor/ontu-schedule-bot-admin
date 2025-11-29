@@ -1,8 +1,8 @@
 import hashlib
 import hmac
-from django.conf import settings
 from typing import TYPE_CHECKING
 
+from django.conf import settings
 from django.core.cache import cache
 from django.http import HttpRequest
 from django.utils import timezone
@@ -46,11 +46,11 @@ class AppAuthentication(HttpBasicAuth):
             return None
 
         # Fast-path: cache successful password checks for 30 seconds
-        # Use HMAC-SHA256 with SECRET_KEY for password hash in cache key (avoid raw SHA256 of password)
+        # Use HMAC-SHA256 with SECRET_KEY for password hash in cache key
         password_hash = hmac.new(
             settings.SECRET_KEY.encode(),
             password.encode("utf-8"),
-            hashlib.sha256
+            hashlib.sha256,
         ).hexdigest()
         cache_key_password_check = f"auth:pw_ok:{username}:{password_hash}"
         password_checked = cache.get(cache_key_password_check)
