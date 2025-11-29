@@ -22,7 +22,6 @@ class AppAuthentication(HttpBasicAuth):
         username: str,
         password: str,
     ) -> APIUser | None:
-        timer = timezone.now()
         try:
             user = APIUser.objects.get(username=username)
         except APIUser.DoesNotExist:
@@ -44,18 +43,11 @@ class AppAuthentication(HttpBasicAuth):
             )
             return None
 
-        make_log(
-            {
-                "msg": "ChatAuthentication: User found",
-                "time_taken_ms": (timezone.now() - timer).total_seconds() * 1000,
-            }
-        )
-
         # Fast-path: cache successful password checks for 30 seconds
-        pw_hash = hashlib.sha256(password.encode("utf-8")).hexdigest()
-        cache_key_pw = f"auth:pw_ok:{username}:{pw_hash}"
-        pw_ok = cache.get(cache_key_pw)
-        if pw_ok is True:
+        password_hash = hashlib.sha256(password.encode("utf-8")).hexdigest()
+        cache_key_password_check = f"auth:pw_ok:{username}:{password_hash}"
+        password_checked = cache.get(cache_key_password_check)
+        if password_checked is True:
             pass
         elif not user.check_password(password):
             make_log(
@@ -77,26 +69,10 @@ class AppAuthentication(HttpBasicAuth):
             return None
         else:
             # Cache success to avoid repeated expensive PBKDF2 checks
-            cache.set(cache_key_pw, True, timeout=30)  # noqa: FBT003
-
-        make_log(
-            {
-                "msg": "ChatAuthentication: User authenticated successfully",
-                "username": username,
-                "time_taken_ms": (timezone.now() - timer).total_seconds() * 1000,
-            }
-        )
+            cache.set(cache_key_password_check, True, timeout=30)  # noqa: FBT003
 
         user.last_login = timezone.now()
         user.save(update_fields=["last_login"])
-
-        make_log(
-            {
-                "msg": "ChatAuthentication: User last_login updated",
-                "username": username,
-                "time_taken_ms": (timezone.now() - timer).total_seconds() * 1000,
-            }
-        )
 
         return user
 
@@ -105,27 +81,11 @@ class ChatAuthentication(AppAuthentication):
     def authenticate(  # type: ignore
         self, request: HttpRequest, username: str, password: str
     ) -> ChatAuthenticationSchema | None:
-        timer = timezone.now()
         user = super().authenticate(request, username, password)
         if user is None:
             return None
-        make_log(
-            {
-                "msg": "ChatAuthentication: Super authentication successful",
-                "username": username,
-                "time_taken_ms": (timezone.now() - timer).total_seconds() * 1000,
-            }
-        )
 
         chat = Chat.objects.get(platform_chat_id=request.headers.get("X-Chat-ID", ""))
-
-        make_log(
-            {
-                "msg": "ChatAuthentication: Chat found",
-                "platform_chat_id": chat.platform_chat_id,
-                "time_taken_ms": (timezone.now() - timer).total_seconds() * 1000,
-            }
-        )
 
         request.chat = chat  # pyright: ignore[reportAttributeAccessIssue]
 
