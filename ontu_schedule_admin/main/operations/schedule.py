@@ -2,6 +2,7 @@ import json
 from typing import TYPE_CHECKING
 
 from django.core.cache import cache
+from django.core.exceptions import ObjectDoesNotExist
 from django.utils import timezone
 from ontu_schedule_admin.api.schemas.schedule import (
     DaySchedule,
@@ -253,11 +254,19 @@ def get_schedule_in_bulk() -> Generator[str]:
     yield "[\n"
 
     is_first = True
-    for subscription in Subscription.objects.filter(is_active=True):
+    for subscription in Subscription.objects.filter(
+        is_active=True,
+        chat__isnull=False,
+    ):
         if not is_first:
             yield ",\n"
         else:
             is_first = False
+
+        try:
+            chat = subscription.chat
+        except ObjectDoesNotExist:
+            continue
 
         schedules: list[DaySchedule | None] = []
         for group in subscription.groups.all():
@@ -276,7 +285,7 @@ def get_schedule_in_bulk() -> Generator[str]:
         yield (
             json.dumps(
                 {
-                    subscription.chat.platform_chat_id: [
+                    chat.platform_chat_id: [
                         s.model_dump(mode="json") if s else None for s in schedules
                     ]
                 }

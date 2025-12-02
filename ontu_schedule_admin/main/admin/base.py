@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING
 
 from django.contrib.admin import ModelAdmin
+from djangoql.admin import DjangoQLSearchMixin
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
@@ -8,7 +9,7 @@ if TYPE_CHECKING:
     from django.http import HttpRequest
 
 
-class BaseModelAdmin(ModelAdmin):
+class BaseModelAdmin(DjangoQLSearchMixin, ModelAdmin):
     readonly_fields: tuple = (  # type: ignore
         "uuid",
         "created_at",

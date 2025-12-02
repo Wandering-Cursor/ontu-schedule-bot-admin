@@ -1,6 +1,6 @@
 [project]
 name = "ontu-schedule-admin"
-version = "1.1.4"
+version = "1.1.5"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -10,6 +10,7 @@ dependencies = [
     "django-guid>=3.5.2",
     "django-ninja>=1.5.0,<1.6.0",
     "django-redis>=6.0.0",
+    "djangoql>=0.18.1",
     "djangorestframework>=3.16.1",
     "psycopg[binary]>=3.2.12",
     "pydantic-settings>=2.11.0",
