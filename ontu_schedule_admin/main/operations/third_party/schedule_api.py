@@ -6,6 +6,8 @@ from django.utils import timezone
 from ontu_parser.classes import Parser
 from ontu_schedule_admin.api.utils.log import make_log
 
+from main.operations.third_party.decorator import catch_api_exception
+
 if TYPE_CHECKING:
     from ontu_parser.classes.dataclasses import Department as ParserDepartment
     from ontu_parser.classes.dataclasses import Faculty as ParserFaculty
@@ -96,6 +98,7 @@ def remap_ukrainian_week_to_dates(schedule_by_dayname: dict[str, T]) -> dict[dat
     return remapped
 
 
+@catch_api_exception
 def get_faculties() -> list[ParserFaculty]:
     faculties = global_parser.get_faculties()
     faculties += global_parser.get_all_extramurals()
@@ -103,6 +106,7 @@ def get_faculties() -> list[ParserFaculty]:
     return faculties
 
 
+@catch_api_exception
 def get_faculty_by_name(faculty_name: str) -> ParserFaculty | None:
     faculties = global_parser.get_faculties()
     for faculty in faculties:
@@ -111,10 +115,12 @@ def get_faculty_by_name(faculty_name: str) -> ParserFaculty | None:
     return None
 
 
+@catch_api_exception
 def get_departments() -> list[ParserDepartment]:
     return global_teacher_parser.get_departments()
 
 
+@catch_api_exception
 def get_group(group: Group) -> ParserGroup | None:
     groups = get_groups(faculty_name=group.faculty.short_name)
     for parser_group in groups:
@@ -123,6 +129,7 @@ def get_group(group: Group) -> ParserGroup | None:
     return None
 
 
+@catch_api_exception
 def get_groups(faculty_name: str) -> list[ParserGroup]:
     faculty = get_faculty_by_name(faculty_name)
 
@@ -140,12 +147,14 @@ def get_groups(faculty_name: str) -> list[ParserGroup]:
     )
 
 
+@catch_api_exception
 def get_teachers(department_external_id: str) -> list[ParseTeacher]:
     return global_teacher_parser.get_teachers_by_department(
         department_id=int(department_external_id),
     )
 
 
+@catch_api_exception
 def get_student_schedule_by_group(
     group: Group,
 ) -> dict[datetime.date, list[StudentsPair]]:
@@ -156,18 +165,14 @@ def get_student_schedule_by_group(
             f"Group {group.short_name} not found in faculty {group.faculty.short_name}"
         )
 
-    try:
-        result = global_parser.get_schedule(
-            group_id=int(api_group.get_group_id()),  # pyright: ignore[reportArgumentType]
-        )
-    except ValueError as e:
-        if len(e.args) >= 2 and e.args[1] == 503:  # noqa: PLR2004
-            global_parser.sender.cookies._value = None  # noqa: SLF001
-        raise e
+    result = global_parser.get_schedule(
+        group_id=int(api_group.get_group_id()),  # pyright: ignore[reportArgumentType]
+    )
 
     return remap_ukrainian_week_to_dates(result)  # pyright: ignore[reportReturnType]
 
 
+@catch_api_exception
 def get_teacher_schedule_by_teacher(
     teacher: Teacher,
 ) -> dict[datetime.date, list[TeachersPair]]:
