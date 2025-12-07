@@ -5,7 +5,7 @@ from django.http import HttpResponse, HttpResponsePermanentRedirect  # noqa: TC0
 from django.shortcuts import redirect
 from ninja import NinjaAPI
 
-from ontu_schedule_admin.api.decorators import request_id_decorator
+from ontu_schedule_admin.api.decorators import close_old_connections_decorator, request_id_decorator
 from ontu_schedule_admin.api.endpoints.admin.router import admin_router
 from ontu_schedule_admin.api.endpoints.chat.router import chat_router
 from ontu_schedule_admin.api.endpoints.public.router import public_router
@@ -15,6 +15,10 @@ app = NinjaAPI()
 
 app.add_decorator(
     request_id_decorator,
+    mode="view",
+)
+app.add_decorator(
+    close_old_connections_decorator,
     mode="view",
 )
 
