@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 
 from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist
+from django.db import transaction
 from django.utils import timezone
 from ontu_schedule_admin.api.schemas.schedule import (
     DaySchedule,
@@ -250,6 +251,7 @@ def get_day_schedule(
     raise ValueError("Either group or teacher must be provided.")
 
 
+@transaction.atomic()
 def get_schedule_in_bulk() -> Generator[str]:
     yield "[\n"
 

@@ -4,14 +4,15 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('main', '0004_apiuser'),
+        ("main", "0004_apiuser"),
     ]
 
     operations = [
         migrations.AddIndex(
-            model_name='chat',
-            index=models.Index(fields=['platform', 'platform_chat_id'], name='main_chat_platfor_451de3_idx'),
+            model_name="chat",
+            index=models.Index(
+                fields=["platform", "platform_chat_id"], name="main_chat_platfor_451de3_idx"
+            ),
         ),
     ]
