@@ -26,7 +26,7 @@ bulk_router = Router(
     tags=(chat_router.tags or []) + ["Bulk"],
     response={200: dict[str, list[DaySchedule | None]]},
 )
-@transaction.atomic
+@transaction.atomic()
 def get_data(request: HttpRequest) -> StreamingHttpResponse:  # noqa: ARG001
     """
     Return a streaming response of schedule data for sending in bulk to chat users.
