@@ -545,7 +545,7 @@ requires-dist = [
     { name = "djangorestframework", specifier = ">=3.16.1" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.2.12" },
     { name = "pydantic-settings", specifier = ">=2.11.0" },
-    { name = "rozklad-ontu-parser-makisukurisu", specifier = ">=0.1.2.0,<0.2" },
+    { name = "rozklad-ontu-parser-makisukurisu", specifier = ">=0.1.3.0,<0.2" },
     { name = "twisted", extras = ["http2", "tls"], specifier = ">=25.5.0" },
     { name = "whitenoise", specifier = ">=6.11.0" },
 ]
@@ -822,16 +822,16 @@ wheels = [
 
 [[package]]
 name = "rozklad-ontu-parser-makisukurisu"
-version = "0.1.2.0"
+version = "0.1.3.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "attrs" },
     { name = "beautifulsoup4" },
     { name = "requests" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/b0/0c/f8070361cafd1ce06e47392764a915d0ee60f70a3d4d46f9c5ab0ba48cc0/rozklad_ontu_parser_makisukurisu-0.1.2.0.tar.gz", hash = "sha256:08661553990b6578776848bf3a716ac68a7a4543b4e62f1685892f8e75951748", size = 15357, upload-time = "2025-03-04T18:14:22.354Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/da/01/c41dedb4c1318ffcea5245eb0af3a0d8ed7b794958861b8f0cd6b102ff44/rozklad_ontu_parser_makisukurisu-0.1.3.0.tar.gz", hash = "sha256:d688350a1123be1c8a87985c59185aa0eccd500099f7b10cdc583bd5e6dbff64", size = 15804, upload-time = "2026-01-15T16:59:15.667Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/64/7f/29d28b2264225fe1138fbecb265ea13aa9985783b3bad9b4d1db9ca8fc0d/rozklad_ontu_parser_makisukurisu-0.1.2.0-py3-none-any.whl", hash = "sha256:62c97352a196cacea1ad4dcc02525566828c0c8934004bf1f4e700986e14b37f", size = 17720, upload-time = "2025-03-04T18:14:21.389Z" },
+    { url = "https://files.pythonhosted.org/packages/af/24/34b8ffb87a2a1688a818232736c8b9dde470d7ee613af25470b9e5ddba36/rozklad_ontu_parser_makisukurisu-0.1.3.0-py3-none-any.whl", hash = "sha256:13626a7c578e718683b76ee0943726d5a393c9b4a36fd85061073d1d90dafedd", size = 18168, upload-time = "2026-01-15T16:59:14.508Z" },
 ]
 
 [[package]]

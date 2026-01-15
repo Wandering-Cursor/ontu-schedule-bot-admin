@@ -3,6 +3,7 @@ import traceback
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import HttpResponse, HttpResponsePermanentRedirect  # noqa: TC002
 from django.shortcuts import redirect
+from main.operations.third_party.errors import IsOnBreakError
 from ninja import NinjaAPI
 
 from ontu_schedule_admin.api.decorators import close_old_connections_decorator, request_id_decorator
@@ -45,6 +46,31 @@ def handle_does_not_exist(
             "msg": "Requested object does not exist.",
         },
         status=404,
+    )
+
+
+@app.exception_handler(IsOnBreakError)
+def handle_is_on_break_error(
+    request,  # noqa: ANN001
+    exc: IsOnBreakError,
+) -> HttpResponse:
+    make_log(
+        message={
+            "msg": "Schedule API is currently on break.",
+            "exception": {
+                "str": str(exc),
+                "traceback": traceback.format_exc(),
+            },
+        },
+        level="ERROR",
+    )
+
+    return app.create_response(
+        request,
+        data={
+            "msg": "Schedule API is currently on break.",
+        },
+        status=503,
     )
 
 

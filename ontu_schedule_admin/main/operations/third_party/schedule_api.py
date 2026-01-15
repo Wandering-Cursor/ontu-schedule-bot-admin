@@ -7,6 +7,7 @@ from ontu_parser.classes import Parser
 from ontu_schedule_admin.api.utils.log import make_log
 
 from main.operations.third_party.decorator import catch_api_exception
+from main.operations.third_party.errors import FacultyNotFoundError, GroupNotFoundError
 
 if TYPE_CHECKING:
     from ontu_parser.classes.dataclasses import Department as ParserDepartment
@@ -140,7 +141,7 @@ def get_groups(faculty_name: str) -> list[ParserGroup]:
             },
             level="ERROR",
         )
-        return []
+        raise FacultyNotFoundError(f"Faculty with name {faculty_name} not found")
 
     return global_parser.get_groups(
         faculty=faculty,
@@ -161,7 +162,7 @@ def get_student_schedule_by_group(
     api_group = get_group(group)
 
     if not api_group:
-        raise ValueError(
+        raise GroupNotFoundError(
             f"Group {group.short_name} not found in faculty {group.faculty.short_name}"
         )
 
