@@ -15,6 +15,7 @@ from ontu_schedule_admin.api.schemas.teacher import ScheduleTeacherInfo, Teacher
 from ontu_schedule_admin.api.utils.log import make_log
 
 from main.models.subscription import Subscription
+from main.operations.third_party.errors import ScheduleAPIError
 from main.operations.third_party.schedule_api import (
     get_student_schedule_by_group as api_get_schedule_by_group,
 )
@@ -256,42 +257,58 @@ def get_schedule_in_bulk() -> Generator[str]:
     yield "[\n"
 
     is_first = True
-    for subscription in Subscription.objects.filter(
-        is_active=True,
-        chat__isnull=False,
-    ):
-        if not is_first:
-            yield ",\n"
-        else:
-            is_first = False
+    try:
+        for subscription in Subscription.objects.filter(
+            is_active=True,
+            chat__isnull=False,
+        ):
+            if not is_first:
+                yield ",\n"
+            else:
+                is_first = False
 
-        try:
-            chat = subscription.chat
-        except ObjectDoesNotExist:
-            continue
+            try:
+                chat = subscription.chat
+            except ObjectDoesNotExist:
+                continue
 
-        schedules: list[DaySchedule | None] = []
-        for group in subscription.groups.all():
-            schedule = get_day_schedule(
-                for_day=timezone.now().date(),
-                group=group,
-            )
-            schedules.append(schedule)
-        for teacher in subscription.teachers.all():
-            schedule = get_day_schedule(
-                for_day=timezone.now().date(),
-                teacher=teacher,
-            )
-            schedules.append(schedule)
+            schedules: list[DaySchedule | None] = []
+            for group in subscription.groups.all():
+                try:
+                    schedule = get_day_schedule(
+                        for_day=timezone.now().date(),
+                        group=group,
+                    )
+                except ScheduleAPIError:
+                    continue
+                schedules.append(schedule)
+            for teacher in subscription.teachers.all():
+                try:
+                    schedule = get_day_schedule(
+                        for_day=timezone.now().date(),
+                        teacher=teacher,
+                    )
+                except ScheduleAPIError:
+                    continue
+                schedules.append(schedule)
 
-        yield (
-            json.dumps(
-                {
-                    chat.platform_chat_id: [
-                        s.model_dump(mode="json") if s else None for s in schedules
-                    ]
-                }
+            yield (
+                json.dumps(
+                    {
+                        chat.platform_chat_id: [
+                            s.model_dump(mode="json") if s else None for s in schedules
+                        ]
+                    }
+                )
             )
+    except Exception as e:  # noqa: BLE001
+        make_log(
+            {
+                "msg": "Error during bulk schedule retrieval",
+                "error": str(e),
+            },
+            level="ERROR",
         )
+        return
 
     yield "\n]"
