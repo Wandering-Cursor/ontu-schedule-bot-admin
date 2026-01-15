@@ -1,6 +1,8 @@
 import functools
 from typing import TYPE_CHECKING, ParamSpec, TypeVar
 
+from main.operations.third_party.errors import FacultyNotFoundError, IsOnBreakError
+
 if TYPE_CHECKING:
     from collections.abc import Callable
 
@@ -15,6 +17,15 @@ def catch_api_exception[**P, T](func: Callable[P, T]) -> Callable[P, T]:
     def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
         try:
             return func(*args, **kwargs)
+        except FacultyNotFoundError as e:
+            from main.operations.third_party.schedule_api import (  # noqa: PLC0415
+                global_parser,
+            )
+
+            if global_parser.is_on_break():
+                raise IsOnBreakError("Schedule API is currently on break.") from e
+
+            raise e
         except ValueError as e:
             if len(e.args) >= 2 and e.args[1] == 503:  # noqa: PLR2004
                 from main.operations.third_party.schedule_api import (  # noqa: PLC0415
