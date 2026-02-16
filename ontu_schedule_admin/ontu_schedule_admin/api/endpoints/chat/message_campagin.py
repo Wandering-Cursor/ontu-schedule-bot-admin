@@ -48,7 +48,7 @@ def list_message_campaigns(
 
     if query.name:
         qs = qs.filter(
-            full_name__icontains=query.name,
+            name__icontains=query.name,
         )
 
     if chat_id:
