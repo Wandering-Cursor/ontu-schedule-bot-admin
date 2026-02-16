@@ -4,12 +4,12 @@ This endpoint module contains requests from authenticated (via chat) users.
 It allows to easily get schedule information for whatever subscription the user has.
 """
 
-from . import bulk, chat, message_campagin, schedule, subscription
+from . import bulk, chat, message_campaign, schedule, subscription
 
 __all__ = [
     "bulk",
     "chat",
-    "message_campagin",
+    "message_campaign",
     "schedule",
     "subscription",
 ]
