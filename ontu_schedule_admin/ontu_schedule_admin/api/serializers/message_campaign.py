@@ -28,5 +28,4 @@ class MessageCampaignSerializer(serializers.ModelSerializer):
             "payload",
             "recipients",
             "created_at",
-            "updated_at",
         ]
