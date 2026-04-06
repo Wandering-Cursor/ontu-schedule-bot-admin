@@ -12,7 +12,6 @@ from main.operations import subscription as subscription_ops
 from ninja import Router
 from ninja.errors import HttpError
 from ninja.params.functions import Header
-
 from ontu_schedule_admin.api.auth import ChatAuthentication
 from ontu_schedule_admin.api.schemas.subscription import Subscription
 

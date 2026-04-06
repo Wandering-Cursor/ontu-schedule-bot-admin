@@ -1,5 +1,4 @@
 from django.contrib.admin import register
-
 from main.models.chat import Chat
 
 from .base import BaseModelAdmin

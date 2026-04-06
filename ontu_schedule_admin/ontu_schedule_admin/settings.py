@@ -17,7 +17,6 @@ import typing
 from pathlib import Path
 
 import dj_database_url
-
 from ontu_schedule_admin.api.utils.log import message_to_json
 from ontu_schedule_admin.config import app_settings
 

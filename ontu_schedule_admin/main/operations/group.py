@@ -1,7 +1,6 @@
 from typing import TYPE_CHECKING
 
 from django.db import transaction
-
 from main.models.faculty import Faculty
 from main.models.group import Group
 

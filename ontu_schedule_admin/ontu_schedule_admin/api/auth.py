@@ -9,7 +9,6 @@ from django.utils import timezone
 from main.models.api_user import APIUser
 from main.models.chat import Chat
 from ninja.security import HttpBasicAuth
-
 from ontu_schedule_admin.api.schemas.auth import ChatAuthenticationSchema
 from ontu_schedule_admin.api.utils.log import make_log
 

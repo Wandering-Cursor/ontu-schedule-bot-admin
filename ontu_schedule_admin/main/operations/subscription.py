@@ -1,18 +1,16 @@
 from typing import TYPE_CHECKING
 
+from main.models.group import Group as GroupModel
+from main.models.subscription import Subscription
+from main.models.teacher import Teacher as TeacherModel
 from ontu_schedule_admin.api.schemas.department import Department
 from ontu_schedule_admin.api.schemas.faculty import Faculty
 from ontu_schedule_admin.api.schemas.grop import Group
 from ontu_schedule_admin.api.schemas.subscription import Subscription as SubscriptionSchema
 from ontu_schedule_admin.api.schemas.teacher import Teacher
 
-from main.models.group import Group as GroupModel
-from main.models.subscription import Subscription
-from main.models.teacher import Teacher as TeacherModel
-
 if TYPE_CHECKING:
     import pydantic
-
     from main.models.chat import Chat
 
 

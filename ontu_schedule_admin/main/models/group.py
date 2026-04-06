@@ -1,14 +1,13 @@
 from typing import TYPE_CHECKING
 
 from django.db import models
-
-from main.models.base import BaseModel
+from main.models.schedule_entity import AbstractScheduleEntity
 
 if TYPE_CHECKING:
     from main.models.faculty import Faculty
 
 
-class Group(BaseModel):
+class Group(AbstractScheduleEntity):
     """
     Academic Groups represent student cohorts or classes within the institution.
 
@@ -26,7 +25,7 @@ class Group(BaseModel):
     def __str__(self) -> str:
         return f"{self.short_name} ({self.faculty!s})"
 
-    class Meta(BaseModel.Meta):
+    class Meta(AbstractScheduleEntity.Meta):
         indexes = [
             models.Index(fields=["uuid", "short_name"]),
             models.Index(fields=["short_name"]),

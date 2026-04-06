@@ -6,7 +6,6 @@ from uuid import uuid4
 
 from asgiref.sync import sync_to_async
 from django.db import connections, reset_queries
-
 from ontu_schedule_admin.api.utils.log import RequestContextVar
 
 if TYPE_CHECKING:

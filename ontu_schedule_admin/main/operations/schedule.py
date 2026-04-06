@@ -5,30 +5,31 @@ from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 from django.utils import timezone
-from ontu_schedule_admin.api.schemas.schedule import (
-    DaySchedule,
-    Lesson,
-    Pair,
-    WeekSchedule,
-)
-from ontu_schedule_admin.api.schemas.teacher import ScheduleTeacherInfo, TeacherInfo
-from ontu_schedule_admin.api.utils.log import make_log
-
+from main.enums import ScheduleEntityType
 from main.models.subscription import Subscription
 from main.operations.third_party.errors import ScheduleAPIError
 from main.operations.third_party.schedule_api import (
     get_student_schedule_by_group as api_get_schedule_by_group,
 )
 from main.operations.third_party.schedule_api import get_teacher_schedule_by_teacher
+from ontu_schedule_admin.api.schemas.schedule import (
+    BulkScheduleItem,
+    DaySchedule,
+    Lesson,
+    Pair,
+    ScheduleEntity,
+    WeekSchedule,
+)
+from ontu_schedule_admin.api.schemas.teacher import ScheduleTeacherInfo, TeacherInfo
+from ontu_schedule_admin.api.utils.log import make_log
 
 if TYPE_CHECKING:
     import datetime
     from collections.abc import Callable, Generator
 
-    from ontu_parser.classes.dataclasses import StudentsPair, TeachersPair
-
     from main.models.group import Group
     from main.models.teacher import Teacher
+    from ontu_parser.classes.dataclasses import StudentsPair, TeachersPair
 
 
 def _process_student_pairs(pairs: list[StudentsPair]) -> list[Pair]:
@@ -84,7 +85,7 @@ def _process_teacher_pairs(
 
 def _get_week_schedule(
     entity: Group | Teacher,
-    entity_type: str,
+    entity_type: ScheduleEntityType,
     api_fetch_func: Callable,
     pairs_processor: Callable,
     ignore_cache: bool = False,
@@ -94,7 +95,7 @@ def _get_week_schedule(
 
     Args:
         entity: The group or teacher entity
-        entity_type: String identifier for the entity type (e.g., 'group', 'teacher')
+        entity_type: ScheduleEntityType identifier for the entity type (e.g., 'group', 'teacher')
         api_fetch_func: Function to call the external API
         pairs_processor: Function to process pairs specific to entity type
         ignore_cache: Whether to bypass cache
@@ -117,15 +118,29 @@ def _get_week_schedule(
 
     api_schedule = api_fetch_func(entity)
 
-    schedule = WeekSchedule(days=[], for_entity=entity.short_name)
+    schedule_entity = ScheduleEntity(
+        type=entity_type,
+        uuid=entity.uuid,
+        short_name=entity.short_name,
+        full_name=getattr(entity, "full_name", None),
+        external_id=getattr(entity, "external_id", None),
+        short_id=entity.get_short_id(),
+    )
+
+    schedule = WeekSchedule(
+        for_entity=entity.short_name,
+        entity=schedule_entity,
+        days=[],
+    )
     for date, pairs in api_schedule.items():
         kwargs = {}
-        if entity_type == "teacher":
+        if entity_type == ScheduleEntityType.TEACHER:
             kwargs["teacher"] = entity
 
         schedule.days.append(
             DaySchedule(
                 for_entity=entity.short_name,
+                entity=schedule_entity,
                 date=date,
                 pairs=pairs_processor(pairs, **kwargs),
             )
@@ -146,7 +161,7 @@ def _get_week_schedule(
 
 def _get_day_schedule(  # noqa: PLR0913
     entity: Group | Teacher,
-    entity_type: str,
+    entity_type: ScheduleEntityType,
     for_day: datetime.date,
     api_fetch_func: Callable,
     pairs_processor: Callable,
@@ -157,7 +172,7 @@ def _get_day_schedule(  # noqa: PLR0913
 
     Args:
         entity: The group or teacher entity
-        entity_type: String identifier for the entity type
+        entity_type: ScheduleEntityType identifier for the entity type (e.g., 'group', 'teacher')
         for_day: The date to fetch schedule for
         api_fetch_func: Function to call the external API
         pairs_processor: Function to process pairs specific to entity type
@@ -206,7 +221,7 @@ def get_week_schedule(
     if group:
         return _get_week_schedule(
             entity=group,
-            entity_type="group",
+            entity_type=ScheduleEntityType.GROUP,
             api_fetch_func=lambda g: api_get_schedule_by_group(group=g),
             pairs_processor=_process_student_pairs,
             ignore_cache=ignore_cache,
@@ -214,7 +229,7 @@ def get_week_schedule(
     if teacher:
         return _get_week_schedule(
             entity=teacher,
-            entity_type="teacher",
+            entity_type=ScheduleEntityType.TEACHER,
             api_fetch_func=lambda t: get_teacher_schedule_by_teacher(teacher=t),
             pairs_processor=_process_teacher_pairs,
             ignore_cache=ignore_cache,
@@ -233,7 +248,7 @@ def get_day_schedule(
     if group:
         return _get_day_schedule(
             entity=group,
-            entity_type="group",
+            entity_type=ScheduleEntityType.GROUP,
             for_day=for_day,
             api_fetch_func=lambda g: api_get_schedule_by_group(group=g),
             pairs_processor=_process_student_pairs,
@@ -242,7 +257,7 @@ def get_day_schedule(
     if teacher:
         return _get_day_schedule(
             entity=teacher,
-            entity_type="teacher",
+            entity_type=ScheduleEntityType.TEACHER,
             for_day=for_day,
             api_fetch_func=lambda t: get_teacher_schedule_by_teacher(teacher=t),
             pairs_processor=_process_teacher_pairs,
@@ -312,3 +327,56 @@ def get_schedule_in_bulk() -> Generator[str]:
         return
 
     yield "\n]"
+
+
+@transaction.atomic()
+def get_schedule_in_bulk_objects() -> Generator[BulkScheduleItem]:
+    """
+    Similar to get_schedule_in_bulk but yields deserialized objects instead of JSON strings.
+
+    Yields:
+        Dictionary with platform_chat_id as key and list of DaySchedule or None as value.
+    """
+    try:
+        for subscription in Subscription.objects.filter(
+            is_active=True,
+            chat__isnull=False,
+        ):
+            try:
+                chat = subscription.chat
+            except ObjectDoesNotExist:
+                continue
+
+            schedules: list[DaySchedule | None] = []
+            for group in subscription.groups.all():
+                try:
+                    schedule = get_day_schedule(
+                        for_day=timezone.now().date(),
+                        group=group,
+                    )
+                except ScheduleAPIError:
+                    continue
+                schedules.append(schedule)
+            for teacher in subscription.teachers.all():
+                try:
+                    schedule = get_day_schedule(
+                        for_day=timezone.now().date(),
+                        teacher=teacher,
+                    )
+                except ScheduleAPIError:
+                    continue
+                schedules.append(schedule)
+
+            yield BulkScheduleItem(
+                platform_chat_id=chat.platform_chat_id,
+                schedules=schedules,
+            )
+    except Exception as e:  # noqa: BLE001
+        make_log(
+            {
+                "msg": "Error during bulk schedule retrieval",
+                "error": str(e),
+            },
+            level="ERROR",
+        )
+        return

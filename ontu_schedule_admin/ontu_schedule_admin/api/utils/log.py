@@ -71,5 +71,5 @@ def message_to_json(message: object) -> str:
     """
     try:
         return json.dumps(message, default=repr)
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         return json.dumps(str(message))

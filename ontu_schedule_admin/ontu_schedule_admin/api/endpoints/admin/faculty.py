@@ -1,7 +1,6 @@
 from django.http import HttpRequest  # noqa: TC002
 from django.views.decorators.csrf import csrf_exempt
 from main.operations.faculty import update_faculties_from_api
-
 from ontu_schedule_admin.api.utils.log import make_log
 
 from .router import admin_router

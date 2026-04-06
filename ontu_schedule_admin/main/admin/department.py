@@ -1,5 +1,4 @@
 from django.contrib.admin import register
-
 from main.models.department import Department
 
 from .base import BaseModelAdmin

@@ -1,7 +1,6 @@
 import pydantic
-from pydantic import UUID4
-
 from ontu_schedule_admin.api.schemas.base import PaginatedRequest, PaginatedResponse, Schema
+from pydantic import UUID4
 
 
 class Faculty(Schema):

@@ -9,7 +9,6 @@ from main.operations.schedule import get_day_schedule, get_week_schedule
 from main.operations.teacher import read_teacher
 from ninja import Router
 from ninja.errors import HttpError
-
 from ontu_schedule_admin.api.schemas.schedule import DaySchedule, WeekSchedule
 
 from .router import public_router

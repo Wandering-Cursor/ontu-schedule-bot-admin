@@ -1,7 +1,6 @@
 from main.models.message_campaign import MessageCampaign
-from rest_framework import serializers
-
 from ontu_schedule_admin.api.serializers.chat import ChatSerializer
+from rest_framework import serializers
 
 
 class MessageCampaignSerializer(serializers.ModelSerializer):

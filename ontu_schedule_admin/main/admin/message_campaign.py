@@ -1,5 +1,4 @@
 from django.contrib.admin import register
-
 from main.models.message_campaign import MessageCampaign
 
 from .base import BaseModelAdmin

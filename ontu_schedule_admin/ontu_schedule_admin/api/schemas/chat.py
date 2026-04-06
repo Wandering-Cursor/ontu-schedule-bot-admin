@@ -1,6 +1,5 @@
 import pydantic
 from main.enums import Platform  # noqa: TC002
-
 from ontu_schedule_admin.api.schemas.base import Schema
 
 

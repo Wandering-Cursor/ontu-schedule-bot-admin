@@ -1,12 +1,11 @@
 import pydantic
-
 from ontu_schedule_admin.api.schemas.base import (
     APISchema,
     PaginatedRequest,
     PaginatedResponse,
     Schema,
 )
-from ontu_schedule_admin.api.schemas.faculty import Faculty  # noqa: TC001
+from ontu_schedule_admin.api.schemas.faculty import Faculty  # noqa: TC002
 
 
 class FetchGroupsRequest(APISchema):

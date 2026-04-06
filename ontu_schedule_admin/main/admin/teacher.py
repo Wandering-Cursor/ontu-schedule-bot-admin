@@ -1,5 +1,4 @@
 from django.contrib.admin import register
-
 from main.models.teacher import Teacher
 
 from .base import BaseModelAdmin
