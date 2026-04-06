@@ -13,6 +13,7 @@ from main.operations.third_party.schedule_api import (
 )
 from main.operations.third_party.schedule_api import get_teacher_schedule_by_teacher
 from ontu_schedule_admin.api.schemas.schedule import (
+    BulkScheduleItem,
     DaySchedule,
     Lesson,
     Pair,
@@ -326,3 +327,56 @@ def get_schedule_in_bulk() -> Generator[str]:
         return
 
     yield "\n]"
+
+
+@transaction.atomic()
+def get_schedule_in_bulk_objects() -> Generator[BulkScheduleItem]:
+    """
+    Similar to get_schedule_in_bulk but yields deserialized objects instead of JSON strings.
+
+    Yields:
+        Dictionary with platform_chat_id as key and list of DaySchedule or None as value.
+    """
+    try:
+        for subscription in Subscription.objects.filter(
+            is_active=True,
+            chat__isnull=False,
+        ):
+            try:
+                chat = subscription.chat
+            except ObjectDoesNotExist:
+                continue
+
+            schedules: list[DaySchedule | None] = []
+            for group in subscription.groups.all():
+                try:
+                    schedule = get_day_schedule(
+                        for_day=timezone.now().date(),
+                        group=group,
+                    )
+                except ScheduleAPIError:
+                    continue
+                schedules.append(schedule)
+            for teacher in subscription.teachers.all():
+                try:
+                    schedule = get_day_schedule(
+                        for_day=timezone.now().date(),
+                        teacher=teacher,
+                    )
+                except ScheduleAPIError:
+                    continue
+                schedules.append(schedule)
+
+            yield BulkScheduleItem(
+                platform_chat_id=chat.platform_chat_id,
+                schedules=schedules,
+            )
+    except Exception as e:  # noqa: BLE001
+        make_log(
+            {
+                "msg": "Error during bulk schedule retrieval",
+                "error": str(e),
+            },
+            level="ERROR",
+        )
+        return

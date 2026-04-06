@@ -66,3 +66,8 @@ class WeekSchedule(APISchema):
     entity: ScheduleEntity
 
     days: list[DaySchedule]
+
+
+class BulkScheduleItem(APISchema):
+    platform_chat_id: str
+    schedules: list[DaySchedule | None]
