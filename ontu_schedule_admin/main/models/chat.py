@@ -1,7 +1,6 @@
 from typing import TYPE_CHECKING
 
 from django.db import models
-
 from main.enums import Platform
 from main.models.base import BaseModel
 

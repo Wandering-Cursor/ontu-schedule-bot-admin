@@ -5,7 +5,6 @@ from django.http import HttpResponse, HttpResponsePermanentRedirect  # noqa: TC0
 from django.shortcuts import redirect
 from main.operations.third_party.errors import IsOnBreakError
 from ninja import NinjaAPI
-
 from ontu_schedule_admin.api.decorators import close_old_connections_decorator, request_id_decorator
 from ontu_schedule_admin.api.endpoints.admin.router import admin_router
 from ontu_schedule_admin.api.endpoints.chat.router import chat_router

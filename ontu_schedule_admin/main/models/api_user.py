@@ -1,6 +1,5 @@
 from django.contrib.auth.models import AbstractBaseUser
 from django.db import models
-
 from main.models.base import BaseModel
 
 

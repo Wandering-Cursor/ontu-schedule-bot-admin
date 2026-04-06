@@ -3,7 +3,6 @@ from django.core.paginator import Paginator
 from django.http import HttpRequest  # noqa: TC002
 from main.models.group import Group
 from ninja import Query, Router
-
 from ontu_schedule_admin.api.schemas.base import Meta
 from ontu_schedule_admin.api.schemas.grop import (
     Group as GroupSchema,

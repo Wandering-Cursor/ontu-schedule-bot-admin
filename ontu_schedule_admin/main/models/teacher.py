@@ -1,14 +1,13 @@
 from typing import TYPE_CHECKING
 
 from django.db import models
-
-from main.models.base import BaseModel
+from main.models.schedule_entity import AbstractScheduleEntity
 
 if TYPE_CHECKING:
     from main.models.department import Department
 
 
-class Teacher(BaseModel):
+class Teacher(AbstractScheduleEntity):
     """
     Teachers represent academic staff members within the institution.
     """
@@ -27,7 +26,7 @@ class Teacher(BaseModel):
     def __str__(self) -> str:
         return f"{self.short_name} ({self.full_name}) - ID: {self.external_id}"
 
-    class Meta(BaseModel.Meta):
+    class Meta(AbstractScheduleEntity.Meta):
         indexes = [
             models.Index(fields=["uuid", "external_id"]),
         ]

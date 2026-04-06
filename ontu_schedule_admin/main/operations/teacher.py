@@ -2,7 +2,6 @@ from typing import TYPE_CHECKING
 
 import pydantic
 from django.db import transaction
-
 from main.models.department import Department
 from main.models.teacher import Teacher
 

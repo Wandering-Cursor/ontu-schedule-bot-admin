@@ -11,7 +11,6 @@ from django.utils import timezone
 from main.operations import schedule as schedule_ops
 from ninja import Router
 from ninja.params.functions import Header as HeaderF
-
 from ontu_schedule_admin.api.auth import ChatAuthentication
 from ontu_schedule_admin.api.schemas.schedule import DaySchedule, WeekSchedule
 

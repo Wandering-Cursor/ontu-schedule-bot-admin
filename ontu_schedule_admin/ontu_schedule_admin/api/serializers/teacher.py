@@ -1,7 +1,6 @@
 from main.models.teacher import Teacher
-from rest_framework import serializers
-
 from ontu_schedule_admin.api.serializers.department import DepartmentSerializer
+from rest_framework import serializers
 
 
 class TeacherSerializer(serializers.ModelSerializer):

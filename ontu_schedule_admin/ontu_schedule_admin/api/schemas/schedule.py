@@ -1,9 +1,23 @@
 import datetime  # noqa: TC003
 
 import pydantic
-
+from main.enums import ScheduleEntityType  # noqa: TC002
 from ontu_schedule_admin.api.schemas.base import APISchema
-from ontu_schedule_admin.api.schemas.teacher import ScheduleTeacherInfo, TeacherInfo  # noqa: TC001
+from ontu_schedule_admin.api.schemas.teacher import ScheduleTeacherInfo, TeacherInfo  # noqa: TC002
+
+
+class ScheduleEntity(APISchema):
+    type: ScheduleEntityType
+
+    uuid: pydantic.UUID4
+
+    short_name: str
+    full_name: str | None
+    external_id: str | None = pydantic.Field(description="As seen in the ONTU Rozklad system.")
+
+    short_id: str = pydantic.Field(
+        description="Might be useful for quick checks. Note that uniqueness is not guaranteed.",
+    )
 
 
 class Lesson(APISchema):
@@ -33,7 +47,11 @@ class Pair(APISchema):
 
 
 class DaySchedule(APISchema):
-    for_entity: str
+    for_entity: str = pydantic.Field(
+        deprecated=True,
+        description="Will be replaced by `entity` field in the future.",
+    )
+    entity: ScheduleEntity
 
     date: datetime.date
 
@@ -41,6 +59,10 @@ class DaySchedule(APISchema):
 
 
 class WeekSchedule(APISchema):
-    for_entity: str
+    for_entity: str = pydantic.Field(
+        deprecated=True,
+        description="Will be replaced by `entity` field in the future.",
+    )
+    entity: ScheduleEntity
 
     days: list[DaySchedule]

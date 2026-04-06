@@ -4,7 +4,6 @@ from django.http import HttpRequest  # noqa: TC002
 from main.models.teacher import Teacher
 from ninja import Query, Router
 from ninja.errors import HttpError
-
 from ontu_schedule_admin.api.schemas.base import Meta
 from ontu_schedule_admin.api.schemas.teacher import (
     Teacher as TeacherSchema,

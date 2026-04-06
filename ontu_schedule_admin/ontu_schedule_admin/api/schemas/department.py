@@ -1,5 +1,4 @@
 import pydantic
-
 from ontu_schedule_admin.api.schemas.base import PaginatedRequest, PaginatedResponse, Schema
 
 

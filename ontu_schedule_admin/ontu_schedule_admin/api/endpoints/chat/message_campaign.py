@@ -5,8 +5,6 @@ from main.models.message_campaign import MessageCampaign
 from ninja import Query, Router
 from ninja.errors import HttpError
 from ninja.params.functions import Header as HeaderF
-from pydantic import UUID4  # noqa: TC002
-
 from ontu_schedule_admin.api.auth import AppAuthentication, ChatAuthentication
 from ontu_schedule_admin.api.schemas.base import Meta
 from ontu_schedule_admin.api.schemas.message_campaign import (
@@ -17,6 +15,7 @@ from ontu_schedule_admin.api.schemas.message_campaign import (
     MessageCampaignPaginatedResponse,
 )
 from ontu_schedule_admin.api.serializers.message_campaign import MessageCampaignSerializer
+from pydantic import UUID4  # noqa: TC002
 
 from .router import chat_router
 

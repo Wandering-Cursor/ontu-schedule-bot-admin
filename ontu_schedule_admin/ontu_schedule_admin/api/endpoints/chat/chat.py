@@ -2,7 +2,6 @@ from django.http import HttpRequest  # noqa: TC002
 from main.models.chat import Chat
 from main.operations import subscription as subscription_ops
 from ninja.errors import HttpError
-
 from ontu_schedule_admin.api.schemas.chat import Chat as ChatSchema
 from ontu_schedule_admin.api.schemas.chat import CreateChatRequest
 from ontu_schedule_admin.api.serializers.chat import ChatSerializer

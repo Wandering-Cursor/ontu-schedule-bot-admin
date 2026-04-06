@@ -1,6 +1,5 @@
 from django.contrib.admin import register
 from django.contrib.auth.admin import UserAdmin
-
 from main.models.api_user import APIUser
 
 

@@ -3,21 +3,19 @@ from typing import TYPE_CHECKING, TypeVar
 from zoneinfo import ZoneInfo
 
 from django.utils import timezone
+from main.operations.third_party.decorator import catch_api_exception
+from main.operations.third_party.errors import FacultyNotFoundError, GroupNotFoundError
 from ontu_parser.classes import Parser
 from ontu_schedule_admin.api.utils.log import make_log
 
-from main.operations.third_party.decorator import catch_api_exception
-from main.operations.third_party.errors import FacultyNotFoundError, GroupNotFoundError
-
 if TYPE_CHECKING:
+    from main.models.group import Group
+    from main.models.teacher import Teacher
     from ontu_parser.classes.dataclasses import Department as ParserDepartment
     from ontu_parser.classes.dataclasses import Faculty as ParserFaculty
     from ontu_parser.classes.dataclasses import Group as ParserGroup
     from ontu_parser.classes.dataclasses import StudentsPair, TeachersPair
     from ontu_parser.classes.dataclasses import Teacher as ParseTeacher
-
-    from main.models.group import Group
-    from main.models.teacher import Teacher
 
 T = TypeVar("T")
 

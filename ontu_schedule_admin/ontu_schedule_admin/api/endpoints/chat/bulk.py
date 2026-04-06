@@ -8,7 +8,6 @@ from django.db import transaction
 from django.http import HttpRequest, StreamingHttpResponse
 from main.operations.schedule import get_schedule_in_bulk
 from ninja import Router
-
 from ontu_schedule_admin.api.schemas.schedule import DaySchedule
 
 from .router import chat_router

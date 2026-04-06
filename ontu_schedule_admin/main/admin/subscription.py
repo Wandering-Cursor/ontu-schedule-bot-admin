@@ -1,5 +1,4 @@
 from django.contrib.admin import register
-
 from main.models.subscription import Subscription
 
 from .base import BaseModelAdmin

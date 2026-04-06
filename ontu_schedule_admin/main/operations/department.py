@@ -1,6 +1,5 @@
-from ontu_schedule_admin.api.utils.log import make_log
-
 from main.models.department import Department
+from ontu_schedule_admin.api.utils.log import make_log
 
 from .third_party.schedule_api import get_departments
 

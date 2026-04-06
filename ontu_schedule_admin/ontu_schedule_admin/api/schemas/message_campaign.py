@@ -1,9 +1,8 @@
 import datetime  # noqa: TC003
 
 import pydantic
-
 from ontu_schedule_admin.api.schemas.base import PaginatedRequest, PaginatedResponse, Schema
-from ontu_schedule_admin.api.schemas.chat import Chat  # noqa: TC001
+from ontu_schedule_admin.api.schemas.chat import Chat  # noqa: TC002
 
 
 class MessageCampaignPaginatedRequest(PaginatedRequest):

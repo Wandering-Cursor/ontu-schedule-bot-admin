@@ -1,6 +1,6 @@
 [project]
 name = "ontu-schedule-admin"
-version = "1.2.0"
+version = "1.3.0"
 description = "Backend for ONTU Schedule Admin web application."
 readme = "README.md"
 requires-python = ">=3.12"
@@ -8,7 +8,7 @@ dependencies = [
     "daphne>=4.2.1",
     "dj-database-url>=3.0.1",
     "django-guid>=3.5.2",
-    "django-ninja>=1.5.0,<1.6.0",
+    "django-ninja>=1.6.2,<1.7",
     "django-redis>=6.0.0",
     "djangoql>=0.18.1",
     "djangorestframework>=3.16.1",
@@ -68,6 +68,9 @@ ignore = [
   "FBT001",
   "FBT002",
 ]
+
+[tool.ruff.lint.isort.sections]
+"my_packages" = ["main", "ontu_schedule_admin"]
 
 [tool.ruff.format]
 quote-style = "double"
