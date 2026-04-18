@@ -2,7 +2,7 @@ from main.models.base import BaseModel
 
 
 class AbstractScheduleEntity(BaseModel):
-    def get_short_id(
+    async def get_short_id(
         self,
         max_length: int = 8,
     ) -> str:
@@ -16,7 +16,7 @@ class AbstractScheduleEntity(BaseModel):
 
         while current_length < max_length:
             short_id = id_string[:current_length]
-            if self.__class__.objects.filter(uuid__startswith=short_id).count() == 1:
+            if await self.__class__.objects.filter(uuid__startswith=short_id).acount() == 1:
                 return short_id
             current_length += 1
 

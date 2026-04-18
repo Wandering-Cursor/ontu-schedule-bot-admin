@@ -10,7 +10,7 @@ from .router import admin_router
     "/department/fetch",
 )
 @csrf_exempt
-def fetch_departments(request: HttpRequest) -> bool:
+async def fetch_departments(request: HttpRequest) -> bool:
     """
     Fetch all departments.
     """
@@ -22,7 +22,7 @@ def fetch_departments(request: HttpRequest) -> bool:
         level="WARNING",
     )
 
-    update_departments_from_api()
+    await update_departments_from_api()
 
     make_log(
         {

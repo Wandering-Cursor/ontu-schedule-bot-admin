@@ -1,9 +1,9 @@
+from __future__ import annotations
+
 import json
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from django.core.cache import cache
-from django.core.exceptions import ObjectDoesNotExist
-from django.db import transaction
 from django.utils import timezone
 from main.enums import ScheduleEntityType
 from main.models.subscription import Subscription
@@ -25,18 +25,18 @@ from ontu_schedule_admin.api.utils.log import make_log
 
 if TYPE_CHECKING:
     import datetime
-    from collections.abc import Callable, Generator
+    from collections.abc import AsyncGenerator, Awaitable, Callable
 
     from main.models.group import Group
     from main.models.teacher import Teacher
-    from ontu_parser.classes.dataclasses import StudentsPair, TeachersPair
+    from ontu_parser.dataclasses import StudentsPair, TeachersPair
 
 
 def _process_student_pairs(pairs: list[StudentsPair]) -> list[Pair]:
     """Process pairs for student schedule."""
     return [
         Pair(
-            number=pair.pair_no,
+            number=pair.pair_no or 0,
             lessons=[
                 Lesson(
                     short_name=lesson.lesson_name["short"],
@@ -58,6 +58,7 @@ def _process_student_pairs(pairs: list[StudentsPair]) -> list[Pair]:
 def _process_teacher_pairs(
     pairs: list[TeachersPair],
     teacher: Teacher,
+    teacher_department_ids: list,
 ) -> list[Pair]:
     """Process pairs for teacher schedule."""
     return [
@@ -71,7 +72,7 @@ def _process_teacher_pairs(
                         uuid=teacher.uuid,
                         short_name=teacher.short_name,
                         full_name=teacher.full_name,
-                        departments=[dept.uuid for dept in teacher.departments.all()],
+                        departments=teacher_department_ids,
                     ),
                     card=pair.lesson.groups,
                 )
@@ -83,10 +84,10 @@ def _process_teacher_pairs(
     ]
 
 
-def _get_week_schedule(
+async def _get_week_schedule(
     entity: Group | Teacher,
     entity_type: ScheduleEntityType,
-    api_fetch_func: Callable,
+    api_fetch_func: Callable[..., Awaitable[dict]],
     pairs_processor: Callable,
     ignore_cache: bool = False,
 ) -> WeekSchedule:
@@ -106,7 +107,7 @@ def _get_week_schedule(
     cache_key = f"{entity.uuid}_{entity_type}_schedule"
 
     if not ignore_cache:
-        cached_schedule = cache.get(cache_key)
+        cached_schedule = await cache.aget(cache_key)
         if cached_schedule is not None:
             make_log(
                 {
@@ -116,7 +117,15 @@ def _get_week_schedule(
             )
             return cached_schedule
 
-    api_schedule = api_fetch_func(entity)
+    api_schedule = await api_fetch_func(entity)
+
+    teacher_department_ids = []
+    if entity_type == ScheduleEntityType.TEACHER:
+        teacher_entity = cast("Teacher", entity)
+        teacher_department_ids = [
+            department_id
+            async for department_id in teacher_entity.departments.values_list("uuid", flat=True)
+        ]
 
     schedule_entity = ScheduleEntity(
         type=entity_type,
@@ -124,7 +133,7 @@ def _get_week_schedule(
         short_name=entity.short_name,
         full_name=getattr(entity, "full_name", None),
         external_id=getattr(entity, "external_id", None),
-        short_id=entity.get_short_id(),
+        short_id=await entity.get_short_id(),
     )
 
     schedule = WeekSchedule(
@@ -136,6 +145,7 @@ def _get_week_schedule(
         kwargs = {}
         if entity_type == ScheduleEntityType.TEACHER:
             kwargs["teacher"] = entity
+            kwargs["teacher_department_ids"] = teacher_department_ids
 
         schedule.days.append(
             DaySchedule(
@@ -146,8 +156,7 @@ def _get_week_schedule(
             )
         )
 
-    # Cache the result
-    cache.set(cache_key, schedule, timeout=60 * 15)
+    await cache.aset(cache_key, schedule, timeout=60 * 15)
 
     make_log(
         {
@@ -159,11 +168,11 @@ def _get_week_schedule(
     return schedule
 
 
-def _get_day_schedule(  # noqa: PLR0913
+async def _get_day_schedule(  # noqa: PLR0913
     entity: Group | Teacher,
     entity_type: ScheduleEntityType,
     for_day: datetime.date,
-    api_fetch_func: Callable,
+    api_fetch_func: Callable[..., Awaitable[dict]],
     pairs_processor: Callable,
     ignore_cache: bool = False,
 ) -> DaySchedule | None:
@@ -183,7 +192,7 @@ def _get_day_schedule(  # noqa: PLR0913
     """
     cache_key = f"{entity.uuid}_{entity_type}_schedule_{for_day.isoformat()}"
     if not ignore_cache:
-        cached_day_schedule = cache.get(cache_key)
+        cached_day_schedule = await cache.aget(cache_key)
         if cached_day_schedule is not None:
             make_log(
                 {
@@ -196,7 +205,7 @@ def _get_day_schedule(  # noqa: PLR0913
             )
             return cached_day_schedule
 
-    full_schedule = _get_week_schedule(
+    full_schedule = await _get_week_schedule(
         entity=entity,
         entity_type=entity_type,
         api_fetch_func=api_fetch_func,
@@ -206,20 +215,20 @@ def _get_day_schedule(  # noqa: PLR0913
 
     for day in full_schedule.days:
         if day.date == for_day:
-            cache.set(cache_key, day, timeout=60 * 5)
+            await cache.aset(cache_key, day, timeout=60 * 5)
             return day
 
     return None
 
 
-def get_week_schedule(
+async def get_week_schedule(
     group: Group | None = None,
     teacher: Teacher | None = None,
     ignore_cache: bool = False,
 ) -> WeekSchedule:
     """Fetch weekly schedule for a group or teacher."""
     if group:
-        return _get_week_schedule(
+        return await _get_week_schedule(
             entity=group,
             entity_type=ScheduleEntityType.GROUP,
             api_fetch_func=lambda g: api_get_schedule_by_group(group=g),
@@ -227,7 +236,7 @@ def get_week_schedule(
             ignore_cache=ignore_cache,
         )
     if teacher:
-        return _get_week_schedule(
+        return await _get_week_schedule(
             entity=teacher,
             entity_type=ScheduleEntityType.TEACHER,
             api_fetch_func=lambda t: get_teacher_schedule_by_teacher(teacher=t),
@@ -238,7 +247,7 @@ def get_week_schedule(
     raise ValueError("Either group or teacher must be provided.")
 
 
-def get_day_schedule(
+async def get_day_schedule(
     for_day: datetime.date,
     group: Group | None = None,
     teacher: Teacher | None = None,
@@ -246,7 +255,7 @@ def get_day_schedule(
 ) -> DaySchedule | None:
     """Fetch daily schedule for a group or teacher."""
     if group:
-        return _get_day_schedule(
+        return await _get_day_schedule(
             entity=group,
             entity_type=ScheduleEntityType.GROUP,
             for_day=for_day,
@@ -255,7 +264,7 @@ def get_day_schedule(
             ignore_cache=ignore_cache,
         )
     if teacher:
-        return _get_day_schedule(
+        return await _get_day_schedule(
             entity=teacher,
             entity_type=ScheduleEntityType.TEACHER,
             for_day=for_day,
@@ -267,39 +276,42 @@ def get_day_schedule(
     raise ValueError("Either group or teacher must be provided.")
 
 
-@transaction.atomic()
-def get_schedule_in_bulk() -> Generator[str]:
+async def get_schedule_in_bulk() -> AsyncGenerator[str]:
     yield "[\n"
 
     is_first = True
     try:
-        for subscription in Subscription.objects.filter(
-            is_active=True,
-            chat__isnull=False,
-        ):
+        subscriptions = (
+            Subscription.objects.filter(
+                is_active=True,
+                chat__isnull=False,
+            )
+            .select_related("chat")
+            .prefetch_related("groups", "teachers")
+        )
+
+        async for subscription in subscriptions:
             if not is_first:
                 yield ",\n"
             else:
                 is_first = False
 
-            try:
-                chat = subscription.chat
-            except ObjectDoesNotExist:
-                continue
+            chat = subscription.chat
 
             schedules: list[DaySchedule | None] = []
-            for group in subscription.groups.all():
+            async for group in subscription.groups.all():
                 try:
-                    schedule = get_day_schedule(
+                    schedule = await get_day_schedule(
                         for_day=timezone.now().date(),
                         group=group,
                     )
                 except ScheduleAPIError:
                     continue
                 schedules.append(schedule)
-            for teacher in subscription.teachers.all():
+
+            async for teacher in subscription.teachers.all():
                 try:
-                    schedule = get_day_schedule(
+                    schedule = await get_day_schedule(
                         for_day=timezone.now().date(),
                         teacher=teacher,
                     )
@@ -329,8 +341,7 @@ def get_schedule_in_bulk() -> Generator[str]:
     yield "\n]"
 
 
-@transaction.atomic()
-def get_schedule_in_bulk_objects() -> Generator[BulkScheduleItem]:
+async def get_schedule_in_bulk_objects() -> AsyncGenerator[BulkScheduleItem]:
     """
     Similar to get_schedule_in_bulk but yields deserialized objects instead of JSON strings.
 
@@ -338,28 +349,33 @@ def get_schedule_in_bulk_objects() -> Generator[BulkScheduleItem]:
         Dictionary with platform_chat_id as key and list of DaySchedule or None as value.
     """
     try:
-        for subscription in Subscription.objects.filter(
-            is_active=True,
-            chat__isnull=False,
-        ):
-            try:
-                chat = subscription.chat
-            except ObjectDoesNotExist:
-                continue
+        subscriptions = (
+            Subscription.objects.filter(
+                is_active=True,
+                chat__isnull=False,
+            )
+            .select_related("chat")
+            .prefetch_related("groups", "teachers")
+        )
+
+        async for subscription in subscriptions:
+            chat = subscription.chat
 
             schedules: list[DaySchedule | None] = []
-            for group in subscription.groups.all():
+
+            async for group in subscription.groups.all():
                 try:
-                    schedule = get_day_schedule(
+                    schedule = await get_day_schedule(
                         for_day=timezone.now().date(),
                         group=group,
                     )
                 except ScheduleAPIError:
                     continue
                 schedules.append(schedule)
-            for teacher in subscription.teachers.all():
+
+            async for teacher in subscription.teachers.all():
                 try:
-                    schedule = get_day_schedule(
+                    schedule = await get_day_schedule(
                         for_day=timezone.now().date(),
                         teacher=teacher,
                     )

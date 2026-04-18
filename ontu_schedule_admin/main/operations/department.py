@@ -4,8 +4,8 @@ from ontu_schedule_admin.api.utils.log import make_log
 from .third_party.schedule_api import get_departments
 
 
-def update_departments_from_api() -> None:
-    api_departments = get_departments()
+async def update_departments_from_api() -> None:
+    api_departments = await get_departments()
 
     make_log(
         {
@@ -15,12 +15,12 @@ def update_departments_from_api() -> None:
     )
 
     for api_department in api_departments:
-        department_names = api_department.get_department_name()
+        department_names = api_department.department_name
 
-        Department.objects.update_or_create(
-            external_id=api_department.get_department_id(),
+        await Department.objects.aupdate_or_create(
+            external_id=api_department.department_id,
             defaults={
-                "short_name": department_names["short"],
-                "full_name": department_names["full"],
+                "short_name": department_names.short,
+                "full_name": department_names.full,
             },
         )

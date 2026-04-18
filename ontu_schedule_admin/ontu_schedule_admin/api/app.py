@@ -3,7 +3,7 @@ import traceback
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import HttpResponse, HttpResponsePermanentRedirect  # noqa: TC002
 from django.shortcuts import redirect
-from main.operations.third_party.errors import IsOnBreakError
+from main.operations.third_party.errors import CookiesExpiredError, IsOnBreakError, ScheduleAPIError
 from ninja import NinjaAPI
 from ontu_schedule_admin.api.decorators import close_old_connections_decorator, request_id_decorator
 from ontu_schedule_admin.api.endpoints.admin.router import admin_router
@@ -70,6 +70,56 @@ def handle_is_on_break_error(
             "msg": "Schedule API is currently on break.",
         },
         status=503,
+    )
+
+
+@app.exception_handler(CookiesExpiredError)
+def handle_cookies_expired_error(
+    request,  # noqa: ANN001
+    exc: CookiesExpiredError,
+) -> HttpResponse:
+    make_log(
+        message={
+            "msg": "Schedule API cookies are expired.",
+            "exception": {
+                "str": str(exc),
+                "traceback": traceback.format_exc(),
+            },
+        },
+        level="ERROR",
+    )
+
+    return app.create_response(
+        request,
+        data={
+            "msg": "Schedule API cookies are expired.\nPlease, try again.",
+        },
+        status=400,
+    )
+
+
+@app.exception_handler(ScheduleAPIError)
+def handle_schedule_api_error(
+    request,  # noqa: ANN001
+    exc: ScheduleAPIError,
+) -> HttpResponse:
+    make_log(
+        message={
+            "msg": "An unknown error occurred while processing the schedule API response.",
+            "exception": {
+                "str": str(exc),
+                "traceback": traceback.format_exc(),
+            },
+        },
+        level="ERROR",
+    )
+
+    return app.create_response(
+        request,
+        data={
+            "msg": "An unknown error occurred while processing the schedule API response.\nPlease, try again later.",
+        },
+        status=500,
     )
 
 

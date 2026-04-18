@@ -11,7 +11,7 @@ from .router import admin_router
     "/group/fetch",
 )
 @csrf_exempt
-def fetch_groups(
+async def fetch_groups(
     request: HttpRequest,
     body: FetchGroupsRequest,
 ) -> bool:
@@ -26,7 +26,7 @@ def fetch_groups(
         level="WARNING",
     )
 
-    update_groups_from_api(faculty_ids=body.faculty_id)
+    await update_groups_from_api(faculty_ids=body.faculty_id)
 
     make_log(
         {

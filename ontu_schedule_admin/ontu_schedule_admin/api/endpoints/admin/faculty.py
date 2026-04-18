@@ -10,7 +10,7 @@ from .router import admin_router
     "/faculty/fetch",
 )
 @csrf_exempt
-def fetch_faculty(request: HttpRequest) -> bool:
+async def fetch_faculty(request: HttpRequest) -> bool:
     """
     Fetch all faculties.
     """
@@ -22,7 +22,7 @@ def fetch_faculty(request: HttpRequest) -> bool:
         level="WARNING",
     )
 
-    update_faculties_from_api()
+    await update_faculties_from_api()
 
     make_log(
         {
