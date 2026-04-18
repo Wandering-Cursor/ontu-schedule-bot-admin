@@ -1,4 +1,5 @@
 import functools
+from inspect import iscoroutinefunction
 from typing import TYPE_CHECKING, ParamSpec, TypeVar
 
 from main.operations.third_party.errors import FacultyNotFoundError, IsOnBreakError
@@ -13,30 +14,22 @@ T = TypeVar("T")
 def catch_api_exception[**P, T](func: Callable[P, T]) -> Callable[P, T]:
     """Decorator to catch API exceptions and log them."""
 
-    @functools.wraps(func)
-    def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
-        try:
-            return func(*args, **kwargs)
-        except FacultyNotFoundError as e:
-            from main.operations.third_party.schedule_api import (  # noqa: PLC0415
-                global_parser,
-            )
+    if iscoroutinefunction(func):
 
-            if global_parser.is_on_break():
-                raise IsOnBreakError("Schedule API is currently on break.") from e
-
-            raise e
-        except ValueError as e:
-            if len(e.args) >= 2 and e.args[1] == 503:  # noqa: PLR2004
+        @functools.wraps(func)
+        async def async_wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
+            try:
+                return await func(*args, **kwargs)
+            except FacultyNotFoundError as e:
                 from main.operations.third_party.schedule_api import (  # noqa: PLC0415
-                    global_parser,
-                    global_teacher_parser,
+                    async_global_parser,
                 )
 
-                global_parser.sender.cookies._value = None  # noqa: SLF001
-                global_teacher_parser.sender.cookies._value = None  # noqa: SLF001
+                if await async_global_parser.is_on_break():
+                    raise IsOnBreakError("Schedule API is currently on break.") from e
 
-                return func(*args, **kwargs)
-            raise e
+                raise e
 
-    return wrapper
+        return async_wrapper
+
+    raise NotImplementedError("Only async functions are supported by this decorator.")

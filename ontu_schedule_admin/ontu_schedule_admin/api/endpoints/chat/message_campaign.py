@@ -1,5 +1,4 @@
 from django.core.paginator import Paginator
-from django.db import transaction
 from django.http import HttpRequest  # noqa: TC002
 from main.models.message_campaign import MessageCampaign
 from ninja import Query, Router
@@ -32,7 +31,6 @@ message_campaign_router = Router(
     path="/",
     response=MessageCampaignPaginatedResponse,
 )
-@transaction.atomic
 def list_message_campaigns(
     request: HttpRequest,  # noqa: ARG001
     query: Query[MessageCampaignPaginatedRequest],
@@ -82,7 +80,6 @@ def list_message_campaigns(
     path="/{message_campaign_id}",
     response=MessageCampaignSchema,
 )
-@transaction.atomic
 def get_message_campaign(
     request: HttpRequest,  # noqa: ARG001
     message_campaign_id: UUID4,

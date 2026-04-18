@@ -11,6 +11,14 @@ class Faculty(BaseModel):
 
     short_name = models.CharField(max_length=255, unique=True)
 
+    parent: models.ForeignKey[Faculty | None] = models.ForeignKey(
+        "self",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="children",
+    )
+
     def __str__(self) -> str:
         return self.short_name
 

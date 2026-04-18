@@ -1,6 +1,5 @@
-import asyncio
 from functools import wraps
-from inspect import isawaitable
+from inspect import isawaitable, iscoroutinefunction
 from typing import TYPE_CHECKING
 from uuid import uuid4
 
@@ -14,6 +13,30 @@ if TYPE_CHECKING:
 
 def request_id_decorator(func) -> object:  # noqa: ANN001
     """Must be used in `view` mode to work."""
+
+    if iscoroutinefunction(func):
+
+        @wraps(func)
+        async def wrapper(request: HttpRequest, *args: object, **kwargs: object) -> object:
+            request_id = request.headers.get("X-Request-ID", str(uuid4()))
+            response_id = str(uuid4())
+
+            request.request_id = request_id  # type: ignore
+            request.response_id = response_id  # type: ignore
+
+            RequestContextVar.set(request)
+
+            response = func(request, *args, **kwargs)
+
+            if isawaitable(response):
+                response = await response
+
+            response["X-Request-ID"] = request_id
+            response["X-Response-ID"] = response_id
+
+            return response
+
+        return wrapper
 
     @wraps(func)
     def wrapper(request: HttpRequest, *args: object, **kwargs: object) -> object:
@@ -42,7 +65,7 @@ def close_old_connections_custom() -> None:
 
 def close_old_connections_decorator(func) -> object:  # noqa: ANN001
     """Must be used in `view` mode to work."""
-    if asyncio.iscoroutinefunction(func):
+    if iscoroutinefunction(func):
 
         @wraps(func)
         async def wrapper(request: HttpRequest, *args: object, **kwargs: object) -> object:  # type: ignore

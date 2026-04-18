@@ -1,7 +1,6 @@
 from typing import TYPE_CHECKING
 
 import pydantic
-from django.db import transaction
 from main.models.department import Department
 from main.models.teacher import Teacher
 
@@ -11,39 +10,40 @@ if TYPE_CHECKING:
     import pydantic
 
 
-@transaction.atomic
-def _process_department(department: Department) -> None:
-    api_teachers = get_teachers(
+async def _process_department(department: Department) -> None:
+    api_teachers = await get_teachers(
         department_external_id=department.external_id,
     )
 
     for api_teacher in api_teachers:
-        teacher_names = api_teacher.get_teacher_name()
+        teacher_names = api_teacher.teacher_name
 
-        teacher, _ = Teacher.objects.update_or_create(
-            external_id=api_teacher.get_teacher_id(),
+        teacher, _ = await Teacher.objects.aupdate_or_create(
+            external_id=api_teacher.teacher_id,
             defaults={
-                "short_name": teacher_names["short"],
-                "full_name": teacher_names["full"],
+                "short_name": teacher_names.short,
+                "full_name": teacher_names.full,
             },
         )
 
-        if not teacher.departments.filter(uuid=department.uuid).exists():
-            teacher.departments.add(department)
-            teacher.save()
+        department_exists = await teacher.departments.filter(uuid=department.uuid).aexists()
+        if not department_exists:
+            await teacher.departments.aadd(department)
 
 
-def update_teachers_from_api(
+async def update_teachers_from_api(
     department_ids: list[pydantic.UUID4] | None,
 ) -> None:
     if department_ids is None:
-        departments = Department.objects.all()
+        departments_qs = Department.objects.all()
     else:
-        departments = Department.objects.filter(uuid__in=department_ids)
+        departments_qs = Department.objects.filter(uuid__in=department_ids)
+
+    departments = [department async for department in departments_qs]
 
     for department in departments:
-        _process_department(department)
+        await _process_department(department)
 
 
-def read_teacher(teacher_id: pydantic.UUID4) -> Teacher:
-    return Teacher.objects.get(uuid=teacher_id)
+async def read_teacher(teacher_id: pydantic.UUID4) -> Teacher:
+    return await Teacher.objects.aget(uuid=teacher_id)

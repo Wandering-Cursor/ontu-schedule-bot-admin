@@ -4,7 +4,6 @@ Bulk operations are used by Telegram Bot co-developed for this API.
 They are using authenticated requests to prevent abuse.
 """
 
-from django.db import transaction
 from django.http import HttpRequest, StreamingHttpResponse
 from main.operations.schedule import get_schedule_in_bulk, get_schedule_in_bulk_objects
 from ninja import Router
@@ -26,8 +25,7 @@ bulk_router = Router(
     tags=(chat_router.tags or []) + ["Bulk"],
     response={200: dict[str, list[DaySchedule | None]]},
 )
-@transaction.atomic()
-def get_data(request: HttpRequest) -> StreamingHttpResponse:  # noqa: ARG001
+async def get_data(request: HttpRequest) -> StreamingHttpResponse:  # noqa: ARG001
     """
     Return a streaming response of schedule data for sending in bulk to chat users.
     Keys are chat ids and values are lists of DaySchedule or None.
@@ -40,13 +38,13 @@ def get_data(request: HttpRequest) -> StreamingHttpResponse:  # noqa: ARG001
     tags=(chat_router.tags or []) + ["Bulk"],
     response=SSE[BulkScheduleItem],
 )
-@transaction.atomic()
-def get_data_sse(request: HttpRequest):  # noqa: ANN201, ARG001
+async def get_data_sse(request: HttpRequest):  # noqa: ANN201, ARG001
     """
     Get a streaming response (SSE format) of schedule data for sending in bulk to chat users.
     Each item is a BulkScheduleItem containing a platform_chat_id and a list of DaySchedule or None.
     """
-    yield from get_schedule_in_bulk_objects()
+    async for item in get_schedule_in_bulk_objects():
+        yield item
 
 
 chat_router.add_router("/bulk", bulk_router)

@@ -5,7 +5,6 @@ Allows to get schedule for authenticated (via chat) users.
 import datetime
 from typing import TYPE_CHECKING
 
-from django.db import transaction
 from django.http import HttpRequest  # noqa: TC002
 from django.utils import timezone
 from main.operations import schedule as schedule_ops
@@ -32,8 +31,7 @@ schedule_router = Router(
     "/tomorrow",
     response=list[DaySchedule | None],
 )
-@transaction.atomic
-def get_tomorrow_schedule(
+async def get_tomorrow_schedule(
     request: HttpRequest,
     chat_id: str = HeaderF(alias="X-Chat-ID"),  # noqa: ARG001
 ) -> list[DaySchedule | None]:
@@ -46,21 +44,19 @@ def get_tomorrow_schedule(
     if not subscription:
         return []
 
-    return [
-        schedule_ops.get_day_schedule(for_day=for_day, group=group)
-        for group in subscription.groups.all()
-    ] + [
-        schedule_ops.get_day_schedule(for_day=for_day, teacher=teacher)
-        for teacher in subscription.teachers.all()
-    ]
+    schedules: list[DaySchedule | None] = []
+    async for group in subscription.groups.all():
+        schedules.append(await schedule_ops.get_day_schedule(for_day=for_day, group=group))
+    async for teacher in subscription.teachers.all():
+        schedules.append(await schedule_ops.get_day_schedule(for_day=for_day, teacher=teacher))
+    return schedules
 
 
 @schedule_router.get(
     "/today",
     response=list[DaySchedule | None],
 )
-@transaction.atomic
-def get_today_schedule(
+async def get_today_schedule(
     request: HttpRequest,
     chat_id: str = HeaderF(alias="X-Chat-ID"),  # noqa: ARG001
 ) -> list[DaySchedule | None]:
@@ -73,21 +69,19 @@ def get_today_schedule(
     if not subscription:
         return []
 
-    return [
-        schedule_ops.get_day_schedule(for_day=for_day, group=group)
-        for group in subscription.groups.all()
-    ] + [
-        schedule_ops.get_day_schedule(for_day=for_day, teacher=teacher)
-        for teacher in subscription.teachers.all()
-    ]
+    schedules: list[DaySchedule | None] = []
+    async for group in subscription.groups.all():
+        schedules.append(await schedule_ops.get_day_schedule(for_day=for_day, group=group))
+    async for teacher in subscription.teachers.all():
+        schedules.append(await schedule_ops.get_day_schedule(for_day=for_day, teacher=teacher))
+    return schedules
 
 
 @schedule_router.get(
     "/week",
     response=list[WeekSchedule],
 )
-@transaction.atomic
-def get_week_schedule(
+async def get_week_schedule(
     request: HttpRequest,
     chat_id: str = HeaderF(alias="X-Chat-ID"),  # noqa: ARG001
 ) -> list[WeekSchedule]:
@@ -98,25 +92,27 @@ def get_week_schedule(
     if not subscription:
         return []
 
-    return [
-        schedule_ops.get_week_schedule(
-            group=group,
+    schedules: list[WeekSchedule] = []
+    async for group in subscription.groups.all():
+        schedules.append(
+            await schedule_ops.get_week_schedule(
+                group=group,
+            )
         )
-        for group in subscription.groups.all()
-    ] + [
-        schedule_ops.get_week_schedule(
-            teacher=teacher,
+    async for teacher in subscription.teachers.all():
+        schedules.append(
+            await schedule_ops.get_week_schedule(
+                teacher=teacher,
+            )
         )
-        for teacher in subscription.teachers.all()
-    ]
+    return schedules
 
 
 @schedule_router.get(
     "/day/{for_date}",
     response=list[DaySchedule | None],
 )
-@transaction.atomic
-def get_day_schedule(
+async def get_day_schedule(
     request: HttpRequest,
     for_date: datetime.date,
     chat_id: str = HeaderF(alias="X-Chat-ID"),  # noqa: ARG001
@@ -128,13 +124,12 @@ def get_day_schedule(
     if not subscription:
         return []
 
-    return [
-        schedule_ops.get_day_schedule(for_day=for_date, group=group)
-        for group in subscription.groups.all()
-    ] + [
-        schedule_ops.get_day_schedule(for_day=for_date, teacher=teacher)
-        for teacher in subscription.teachers.all()
-    ]
+    schedules: list[DaySchedule | None] = []
+    async for group in subscription.groups.all():
+        schedules.append(await schedule_ops.get_day_schedule(for_day=for_date, group=group))
+    async for teacher in subscription.teachers.all():
+        schedules.append(await schedule_ops.get_day_schedule(for_day=for_date, teacher=teacher))
+    return schedules
 
 
 chat_router.add_router("/schedule", schedule_router)

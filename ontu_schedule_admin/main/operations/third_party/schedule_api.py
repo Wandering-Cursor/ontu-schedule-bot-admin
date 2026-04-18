@@ -2,25 +2,27 @@ import datetime
 from typing import TYPE_CHECKING, TypeVar
 from zoneinfo import ZoneInfo
 
+from django.db.models import aprefetch_related_objects
 from django.utils import timezone
 from main.operations.third_party.decorator import catch_api_exception
 from main.operations.third_party.errors import FacultyNotFoundError, GroupNotFoundError
-from ontu_parser.classes import Parser
+from ontu_parser.dataclasses.sender import SenderOptions
+from ontu_parser.parser import AsyncParser
 from ontu_schedule_admin.api.utils.log import make_log
 
 if TYPE_CHECKING:
     from main.models.group import Group
     from main.models.teacher import Teacher
-    from ontu_parser.classes.dataclasses import Department as ParserDepartment
-    from ontu_parser.classes.dataclasses import Faculty as ParserFaculty
-    from ontu_parser.classes.dataclasses import Group as ParserGroup
-    from ontu_parser.classes.dataclasses import StudentsPair, TeachersPair
-    from ontu_parser.classes.dataclasses import Teacher as ParseTeacher
+    from ontu_parser.dataclasses import Department as ParserDepartment
+    from ontu_parser.dataclasses import Faculty as ParserFaculty
+    from ontu_parser.dataclasses import Group as ParserGroup
+    from ontu_parser.dataclasses import StudentsPair, TeachersPair
+    from ontu_parser.dataclasses import Teacher as ParseTeacher
 
 T = TypeVar("T")
 
-global_parser = Parser()
-global_teacher_parser = Parser(kwargs={"for_teachers": True})
+async_global_parser = AsyncParser()
+async_global_teacher_parser = AsyncParser(SenderOptions(for_teachers=True))
 
 try:
     KYIV_TZ = ZoneInfo("Europe/Kyiv")
@@ -98,39 +100,93 @@ def remap_ukrainian_week_to_dates(schedule_by_dayname: dict[str, T]) -> dict[dat
 
 
 @catch_api_exception
-def get_faculties() -> list[ParserFaculty]:
-    faculties = global_parser.get_faculties()
-    faculties += global_parser.get_all_extramurals()
+async def get_faculties() -> list[ParserFaculty]:
+    faculties = await async_global_parser.get_faculties()
+    faculties += await async_global_parser.get_all_extramurals()
 
     return faculties
 
 
 @catch_api_exception
-def get_faculty_by_name(faculty_name: str) -> ParserFaculty | None:
-    faculties = global_parser.get_faculties()
+async def get_faculty_by_id(faculty_id: int) -> ParserFaculty | None:
+    """
+    !IMPORTANT!
+    !This method can only work within the same PHP Session!
+    """
+    return await async_global_parser.get_faculty(faculty_id=faculty_id)
+
+
+@catch_api_exception
+async def get_faculty_by_name(faculty_name: str) -> ParserFaculty | None:
+    faculties = await async_global_parser.get_faculties()
     for faculty in faculties:
-        if faculty.get_faculty_name() == faculty_name:
+        if faculty.faculty_name == faculty_name:
             return faculty
     return None
 
 
 @catch_api_exception
-def get_departments() -> list[ParserDepartment]:
-    return global_teacher_parser.get_departments()
+async def get_extramural_faculty(faculty: ParserFaculty) -> ParserFaculty | None:
+    return await async_global_parser.get_extramural(faculty=faculty)
 
 
 @catch_api_exception
-def get_group(group: Group) -> ParserGroup | None:
-    groups = get_groups(faculty_name=group.faculty.short_name)
+async def get_departments() -> list[ParserDepartment]:
+    return await async_global_teacher_parser.get_departments()
+
+
+@catch_api_exception
+async def get_group(group: Group) -> ParserGroup | None:
+    await aprefetch_related_objects([group], "faculty__parent")
+    faculty = group.faculty
+
+    if parent := faculty.parent:
+        api_parent_faculty = await get_faculty_by_name(parent.short_name)
+        if not api_parent_faculty:
+            make_log(
+                {
+                    "msg": "Could not find parent faculty in Schedule API",
+                    "parent": parent,
+                    "faculty": faculty,
+                },
+                level="WARNING",
+            )
+            return None
+
+        api_faculty = await get_extramural_faculty(faculty=api_parent_faculty)
+    else:
+        api_faculty = await get_faculty_by_name(faculty.short_name)
+
+    if not api_faculty:
+        make_log(
+            {
+                "msg": "Could not find faculty in Schedule API",
+                "faculty": faculty,
+            },
+            level="WARNING",
+        )
+        return None
+
+    groups = await get_groups(faculty=api_faculty)
+
     for parser_group in groups:
-        if parser_group.get_group_name() == group.short_name:
+        if parser_group.group_name == group.short_name:
             return parser_group
+
     return None
 
 
 @catch_api_exception
-def get_groups(faculty_name: str) -> list[ParserGroup]:
-    faculty = get_faculty_by_name(faculty_name)
+async def get_groups(
+    faculty_name: str | None = None,
+    faculty: ParserFaculty | None = None,
+) -> list[ParserGroup]:
+    xor = (faculty_name is None) != (faculty is None)
+    if not xor:
+        raise ValueError("Exactly one of faculty_name or faculty must be provided")
+
+    if faculty is None and faculty_name is not None:
+        faculty = await get_faculty_by_name(faculty_name)
 
     if faculty is None:
         make_log(
@@ -141,41 +197,42 @@ def get_groups(faculty_name: str) -> list[ParserGroup]:
         )
         raise FacultyNotFoundError(f"Faculty with name {faculty_name} not found")
 
-    return global_parser.get_groups(
+    return await async_global_parser.get_groups(
         faculty=faculty,
     )
 
 
 @catch_api_exception
-def get_teachers(department_external_id: str) -> list[ParseTeacher]:
-    return global_teacher_parser.get_teachers_by_department(
+async def get_teachers(department_external_id: str) -> list[ParseTeacher]:
+    return await async_global_teacher_parser.get_teachers_by_department(
         department_id=int(department_external_id),
     )
 
 
 @catch_api_exception
-def get_student_schedule_by_group(
+async def get_student_schedule_by_group(
     group: Group,
 ) -> dict[datetime.date, list[StudentsPair]]:
-    api_group = get_group(group)
+    group = await group.__class__.objects.select_related("faculty").aget(pk=group.pk)
+    api_group = await get_group(group)
 
     if not api_group:
         raise GroupNotFoundError(
             f"Group {group.short_name} not found in faculty {group.faculty.short_name}"
         )
 
-    result = global_parser.get_schedule(
-        group_id=int(api_group.get_group_id()),  # pyright: ignore[reportArgumentType]
+    result = await async_global_parser.get_schedule(
+        group_id=int(api_group.group_id),
     )
 
     return remap_ukrainian_week_to_dates(result)  # pyright: ignore[reportReturnType]
 
 
 @catch_api_exception
-def get_teacher_schedule_by_teacher(
+async def get_teacher_schedule_by_teacher(
     teacher: Teacher,
 ) -> dict[datetime.date, list[TeachersPair]]:
-    result = global_teacher_parser.get_schedule(
+    result = await async_global_teacher_parser.get_schedule(
         teacher_id=int(teacher.external_id),  # pyright: ignore[reportArgumentType]
     )
 

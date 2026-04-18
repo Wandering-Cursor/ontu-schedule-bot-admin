@@ -91,7 +91,9 @@ class ChatAuthentication(AppAuthentication):
         if user is None:
             return None
 
-        chat = Chat.objects.get(platform_chat_id=request.headers.get("X-Chat-ID", ""))
+        chat = Chat.objects.select_related("subscription").get(
+            platform_chat_id=request.headers.get("X-Chat-ID", ""),
+        )
 
         request.chat = chat  # pyright: ignore[reportAttributeAccessIssue]
 

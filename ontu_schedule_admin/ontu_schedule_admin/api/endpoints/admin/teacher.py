@@ -11,7 +11,7 @@ from .router import admin_router
     "/teacher/fetch",
 )
 @csrf_exempt
-def fetch_teachers(
+async def fetch_teachers(
     request: HttpRequest,
     body: FetchTeacherRequest,
 ) -> bool:
@@ -26,7 +26,7 @@ def fetch_teachers(
         level="WARNING",
     )
 
-    update_teachers_from_api(department_ids=body.department_id)
+    await update_teachers_from_api(department_ids=body.department_id)
 
     make_log(
         {
