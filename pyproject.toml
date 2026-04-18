@@ -1,6 +1,6 @@
 [project]
 name = "ontu-schedule-admin"
-version = "1.4.0"
+version = "1.4.1"
 description = "Backend for ONTU Schedule Admin web application."
 readme = "README.md"
 requires-python = ">=3.12"
@@ -12,7 +12,7 @@ dependencies = [
     "django-redis>=6.0.0",
     "djangoql>=0.18.1",
     "djangorestframework>=3.16.1",
-    "ontu-parser==1.0.1",
+    "ontu-parser==1.0.2",
     "psycopg[binary]>=3.2.12",
     "pydantic-settings>=2.11.0",
     "twisted[http2,tls]>=25.5.0",
