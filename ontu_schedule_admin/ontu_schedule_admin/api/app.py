@@ -117,7 +117,8 @@ def handle_schedule_api_error(
     return app.create_response(
         request,
         data={
-            "msg": "An unknown error occurred while processing the schedule API response.\nPlease, try again later.",
+            "msg": "An unknown error occurred while processing the schedule API response.\n"
+            "Please, try again later."
         },
         status=500,
     )

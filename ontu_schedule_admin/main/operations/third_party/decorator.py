@@ -36,7 +36,7 @@ def catch_api_exception[**P, T](func: Callable[P, T]) -> Callable[P, T]:
                 if await is_schedule_api_on_break():
                     raise IsOnBreakError("Schedule API is currently on break.") from e
 
-                raise e
+                raise
             except ParsingError as e:
                 from main.operations.third_party.schedule_api import (  # noqa: PLC0415
                     reset_parser_cache,
