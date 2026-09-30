@@ -168,7 +168,7 @@ async def _get_week_schedule(
     return schedule
 
 
-async def _get_day_schedule(  # noqa: PLR0913
+async def _get_day_schedule(  # noqa: PLR0913, PLR0917
     entity: Group | Teacher,
     entity_type: ScheduleEntityType,
     for_day: datetime.date,

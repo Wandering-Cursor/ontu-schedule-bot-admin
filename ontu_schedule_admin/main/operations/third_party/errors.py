@@ -13,5 +13,6 @@ class GroupNotFoundError(ScheduleAPIError):
 class IsOnBreakError(ScheduleAPIError):
     """Exception raised when the API is on break."""
 
+
 class CookiesExpiredError(ScheduleAPIError):
     """Exception raised when the API cookies are expired."""

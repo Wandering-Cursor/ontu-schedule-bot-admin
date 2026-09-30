@@ -81,11 +81,7 @@ def remove_group_from_subscription(
 
     If the group is not attached to the subscription, this is a no-op.
     """
-    try:
-        group = GroupModel.objects.get(uuid=group_id)
-    except GroupModel.DoesNotExist:
-        # Let it raise to surface a 404 at the API layer similar to read operations
-        raise
+    group = GroupModel.objects.get(uuid=group_id)
 
     if subscription.groups.filter(uuid=group.uuid).exists():
         subscription.groups.remove(group)
@@ -114,11 +110,7 @@ def remove_teacher_from_subscription(
 
     If the teacher is not attached to the subscription, this is a no-op.
     """
-    try:
-        teacher = TeacherModel.objects.get(uuid=teacher_id)
-    except TeacherModel.DoesNotExist:
-        # Surface 404-like error to the API layer
-        raise
+    teacher = TeacherModel.objects.get(uuid=teacher_id)
 
     if subscription.teachers.filter(uuid=teacher.uuid).exists():
         subscription.teachers.remove(teacher)
