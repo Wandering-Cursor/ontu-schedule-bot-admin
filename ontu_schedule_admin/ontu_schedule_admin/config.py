@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     db_url: pydantic.PostgresDsn = pydantic.PostgresDsn(
         "postgresql://postgres:local@db:5432/postgres"
     )
+    proxy: pydantic.AnyUrl | None = None
 
 
 app_settings = Settings()  # pyright: ignore[reportCallIssue]

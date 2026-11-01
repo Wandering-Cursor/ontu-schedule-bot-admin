@@ -6,11 +6,14 @@ from zoneinfo import ZoneInfo
 from django.core.cache import cache
 from django.db.models import aprefetch_related_objects
 from django.utils import timezone
+from httpx import AsyncHTTPTransport
+from httpx._utils import URLPattern
 from main.operations.third_party.decorator import catch_api_exception
 from main.operations.third_party.errors import FacultyNotFoundError, GroupNotFoundError
 from ontu_parser.dataclasses.sender import SenderOptions
 from ontu_parser.parser import AsyncParser
 from ontu_schedule_admin.api.utils.log import make_log
+from ontu_schedule_admin.config import app_settings
 
 if TYPE_CHECKING:
     from main.models.group import Group
@@ -61,7 +64,19 @@ async def _get_parser(*, for_teachers: bool) -> AsyncParser:
         cached_state=cached_state if isinstance(cached_state, dict) else None,
     )
 
-    return AsyncParser(sender_options)
+    parser = AsyncParser(sender_options)
+    if proxy_url := app_settings.proxy:
+        # TODO: #33 Move proxy setup to parser  # noqa: FIX002, TD002
+        if parser.sender.client._mounts:  # noqa: SLF001
+            for k in parser.sender.client._mounts:  # noqa: SLF001
+                parser.sender.client._mounts[k] = AsyncHTTPTransport(  # noqa: SLF001
+                    proxy=str(proxy_url),
+                )
+        else:
+            parser.sender.client._mounts[URLPattern("all://")] = AsyncHTTPTransport(  # noqa: SLF001
+                proxy=str(proxy_url),
+            )
+    return parser
 
 
 async def _store_parser_cookies(*, parser: AsyncParser, for_teachers: bool) -> None:
