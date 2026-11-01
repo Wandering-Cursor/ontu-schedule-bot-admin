@@ -1,6 +1,6 @@
 [project]
 name = "ontu-schedule-admin"
-version = "1.4.2"
+version = "1.4.3"
 description = "Backend for ONTU Schedule Admin web application."
 readme = "README.md"
 requires-python = ">=3.12"
@@ -62,6 +62,7 @@ extend-select = [
 ]
 ignore = [
   "ISC001",
+  "ICN001",
   "N999",
   "ERA001",
   "RUF012",
