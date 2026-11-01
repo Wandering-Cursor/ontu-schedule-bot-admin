@@ -1,6 +1,6 @@
 [project]
 name = "ontu-schedule-admin"
-version = "1.4.3"
+version = "1.4.4"
 description = "Backend for ONTU Schedule Admin web application."
 readme = "README.md"
 requires-python = ">=3.12"
@@ -17,6 +17,7 @@ dependencies = [
     "pydantic-settings>=2.11.0",
     "twisted[http2,tls]>=25.5.0",
     "whitenoise>=6.11.0",
+    "httpx[socks]",
 ]
 
 [tool.ruff]
